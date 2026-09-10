@@ -1,0 +1,113 @@
+import { Activity, CalendarClock, Database, ShieldAlert } from "@/components/icons";
+import { MarketSummary } from "@/components/market-summary";
+import { MacroPanel } from "@/components/macro-panel";
+import { AssetRadar } from "@/components/asset-radar";
+import { EventsPanel } from "@/components/events-panel";
+import { dashboardDemo } from "@/data/dashboard-demo";
+
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1920px] flex-col px-5 py-4 lg:px-8">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border/80 pb-4">
+          <div className="flex items-center gap-4">
+            <div className="grid size-11 place-items-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 font-mono text-sm font-black tracking-[0.16em] text-cyan-300">
+              CL
+            </div>
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-cyan-300">
+                Market intelligence
+              </p>
+              <h1 className="text-xl font-semibold tracking-tight text-white">Cloe Dashboard</h1>
+            </div>
+          </div>
+
+          <nav aria-label="Secciones del dashboard" className="hidden items-center gap-1 rounded-lg border border-border bg-panel p-1 md:flex">
+            {dashboardDemo.navigation.map((item, index) => (
+              <span
+                className={index === 0 ? "nav-item nav-item-active" : "nav-item"}
+                key={item}
+              >
+                {item}
+              </span>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <span className="status-dot" aria-hidden="true" />
+            <div className="text-right">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Estado de datos</p>
+              <p className="text-xs font-medium text-amber-300">Modo demostración</p>
+            </div>
+          </div>
+        </header>
+
+        <section className="my-4 flex items-center justify-between gap-4 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-4 py-2.5 text-xs text-amber-100">
+          <p>
+            <strong className="font-semibold text-amber-300">Sin datos reales.</strong>{" "}
+            Esta vista valida estructura y jerarquía; Supabase todavía no está conectado.
+          </p>
+          <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-300/80 sm:block">
+            Demo v0.1
+          </span>
+        </section>
+
+        <section aria-label="Resumen del mercado" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          {dashboardDemo.summary.map((item, index) => {
+            const Icon = [Activity, Database, CalendarClock, ShieldAlert][index];
+            return <MarketSummary icon={<Icon />} item={item} key={item.label} />;
+          })}
+        </section>
+
+        <section className="mt-3 grid flex-1 grid-cols-1 gap-3 xl:grid-cols-12">
+          <div className="grid content-start gap-3 xl:col-span-8">
+            <section className="grid grid-cols-1 gap-3 md:grid-cols-2" aria-label="Análisis técnico principal">
+              {dashboardDemo.technical.map((asset) => (
+                <article className="panel p-4" key={asset.symbol}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="asset-symbol">{asset.mark}</span>
+                      <div>
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{asset.timeframe}</p>
+                        <h2 className="text-lg font-semibold text-white">{asset.symbol}</h2>
+                      </div>
+                    </div>
+                    <span className="badge badge-neutral">{asset.bias}</span>
+                  </div>
+
+                  <p className="mt-4 text-sm leading-6 text-zinc-300">{asset.reading}</p>
+
+                  <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3">
+                    {asset.levels.map((level) => (
+                      <div key={level.label}>
+                        <dt className="metric-label">{level.label}</dt>
+                        <dd className="mt-1 font-mono text-sm font-semibold text-zinc-200">{level.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+
+                  <div className="mt-3 flex items-center justify-between rounded-md bg-surface px-3 py-2 text-xs">
+                    <span className="text-muted">Confirmación requerida</span>
+                    <span className="font-medium text-cyan-300">{asset.trigger}</span>
+                  </div>
+                </article>
+              ))}
+            </section>
+
+            <AssetRadar assets={dashboardDemo.assets} />
+          </div>
+
+          <aside className="grid content-start gap-3 xl:col-span-4">
+            <MacroPanel metrics={dashboardDemo.macro} />
+            <EventsPanel events={dashboardDemo.events} />
+          </aside>
+        </section>
+
+        <footer className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 font-mono text-[10px] uppercase tracking-wider text-muted">
+          <span>Datos → análisis independiente → cruce Cloe → decisión separada</span>
+          <span>Última actualización: pendiente</span>
+        </footer>
+      </div>
+    </main>
+  );
+}
