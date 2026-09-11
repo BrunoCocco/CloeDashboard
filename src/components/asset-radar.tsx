@@ -1,11 +1,11 @@
-import type { AssetRow } from "@/data/dashboard-demo";
+import type { AssetRow } from "@/lib/dashboard";
 
 export function AssetRadar({ assets }: { assets: AssetRow[] }) {
   return (
     <section className="panel overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3">
         <div><p className="metric-label">Seguimiento completo</p><h2 className="mt-1 text-base font-semibold text-white">Radar de activos</h2></div>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-muted">7 activos</span>
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted">{assets.length} activos</span>
       </div>
       <div className="overflow-x-auto border-t border-border">
         <table className="w-full min-w-[680px] border-collapse text-left text-xs">

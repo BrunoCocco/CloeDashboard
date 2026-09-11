@@ -4,16 +4,16 @@ Pantalla complementaria a `PreciosAlts` para visualizar el análisis técnico, f
 
 ## Estado
 
-La versión `0.1` valida la arquitectura visual con datos de demostración claramente identificados. No contiene cotizaciones ni conclusiones reales.
+La aplicación usa autenticación de Supabase, protege el dashboard y lee únicamente los registros del usuario conectado mediante RLS. Cuando todavía no existen análisis, muestra estados vacíos en lugar de datos simulados.
 
 ## Arquitectura
 
 - Next.js 16, React 19 y TypeScript.
 - Tailwind CSS 4.
-- Supabase como histórico acumulativo (pendiente de conectar y aplicar).
+- Supabase como histórico acumulativo y autenticación.
 - Vercel para vistas previas y producción.
 
-La base separa datos objetivos, análisis independientes y síntesis. El esquema declarativo propuesto está en `supabase/schema.sql` y no se ha aplicado a una base remota.
+La base separa datos objetivos, análisis independientes y síntesis. El esquema declarativo está versionado en `supabase/schema.sql` y en `supabase/migrations/`.
 
 ## Desarrollo
 
@@ -26,6 +26,6 @@ Variables previstas en `.env.example`:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SECRET_KEY` (solo servidor)
+- `NEXT_PUBLIC_SITE_URL`
 
 Nunca se deben subir valores reales de estas variables a GitHub.

@@ -3,9 +3,24 @@ import { MarketSummary } from "@/components/market-summary";
 import { MacroPanel } from "@/components/macro-panel";
 import { AssetRadar } from "@/components/asset-radar";
 import { EventsPanel } from "@/components/events-panel";
-import { dashboardDemo } from "@/data/dashboard-demo";
+import { signOut } from "@/app/actions";
+import { loadDashboard } from "@/lib/dashboard";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  const userId = typeof claims?.sub === "string" ? claims.sub : null;
+
+  if (!userId) redirect("/login");
+
+  const dashboard = await loadDashboard(userId);
+  const userEmail = typeof claims?.email === "string" ? claims.email : "Cuenta activa";
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-[1920px] flex-col px-5 py-4 lg:px-8">
@@ -22,8 +37,8 @@ export default function Home() {
             </div>
           </div>
 
-          <nav aria-label="Secciones del dashboard" className="hidden items-center gap-1 rounded-lg border border-border bg-panel p-1 md:flex">
-            {dashboardDemo.navigation.map((item, index) => (
+          <nav aria-label="Secciones del dashboard" className="hidden items-center gap-1 rounded-lg border border-border bg-panel p-1 xl:flex">
+            {dashboard.navigation.map((item, index) => (
               <span
                 className={index === 0 ? "nav-item nav-item-active" : "nav-item"}
                 key={item}
@@ -34,26 +49,35 @@ export default function Home() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <span className="status-dot" aria-hidden="true" />
+            <span className={dashboard.hasData ? "status-dot status-dot-live" : "status-dot"} aria-hidden="true" />
             <div className="text-right">
-              <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Estado de datos</p>
-              <p className="text-xs font-medium text-amber-300">Modo demostración</p>
+              <p className="max-w-44 truncate font-mono text-[10px] uppercase tracking-wider text-muted">{userEmail}</p>
+              <p className={dashboard.hasData ? "text-xs font-medium text-emerald-300" : "text-xs font-medium text-amber-300"}>
+                {dashboard.hasData ? "Datos sincronizados" : "Base conectada"}
+              </p>
             </div>
+            <form action={signOut}>
+              <button className="button-ghost" type="submit">Salir</button>
+            </form>
           </div>
         </header>
 
-        <section className="my-4 flex items-center justify-between gap-4 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-4 py-2.5 text-xs text-amber-100">
+        <section className={dashboard.hasData ? "my-4 flex items-center justify-between gap-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-2.5 text-sm text-emerald-100" : "my-4 flex items-center justify-between gap-4 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-4 py-2.5 text-sm text-amber-100"}>
           <p>
-            <strong className="font-semibold text-amber-300">Sin datos reales.</strong>{" "}
-            Esta vista valida estructura y jerarquía; Supabase todavía no está conectado.
+            <strong className={dashboard.hasData ? "font-semibold text-emerald-300" : "font-semibold text-amber-300"}>
+              {dashboard.hasData ? "Histórico activo." : "Esperando el primer análisis."}
+            </strong>{" "}
+            {dashboard.hasData
+              ? "La pantalla refleja los registros privados almacenados en Supabase."
+              : "La conexión funciona; los paneles se completarán cuando Cloe guarde datos."}
           </p>
           <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-300/80 sm:block">
-            Demo v0.1
+            Producción
           </span>
         </section>
 
         <section aria-label="Resumen del mercado" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          {dashboardDemo.summary.map((item, index) => {
+          {dashboard.summary.map((item, index) => {
             const Icon = [Activity, Database, CalendarClock, ShieldAlert][index];
             return <MarketSummary icon={<Icon />} item={item} key={item.label} />;
           })}
@@ -62,7 +86,7 @@ export default function Home() {
         <section className="mt-3 grid flex-1 grid-cols-1 gap-3 xl:grid-cols-12">
           <div className="grid content-start gap-3 xl:col-span-8">
             <section className="grid grid-cols-1 gap-3 md:grid-cols-2" aria-label="Análisis técnico principal">
-              {dashboardDemo.technical.map((asset) => (
+              {dashboard.technical.map((asset) => (
                 <article className="panel p-4" key={asset.symbol}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -94,18 +118,18 @@ export default function Home() {
               ))}
             </section>
 
-            <AssetRadar assets={dashboardDemo.assets} />
+            <AssetRadar assets={dashboard.assets} />
           </div>
 
           <aside className="grid content-start gap-3 xl:col-span-4">
-            <MacroPanel metrics={dashboardDemo.macro} />
-            <EventsPanel events={dashboardDemo.events} />
+            <MacroPanel metrics={dashboard.macro} />
+            <EventsPanel events={dashboard.events} />
           </aside>
         </section>
 
         <footer className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 font-mono text-[10px] uppercase tracking-wider text-muted">
           <span>Datos → análisis independiente → cruce Cloe → decisión separada</span>
-          <span>Última actualización: pendiente</span>
+          <span>Última actualización: {dashboard.lastUpdated}</span>
         </footer>
       </div>
     </main>

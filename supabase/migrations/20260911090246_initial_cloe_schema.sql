@@ -32,7 +32,6 @@ create table if not exists public.candles (
 );
 
 create index if not exists candles_user_asset_time_idx on public.candles (user_id, asset_id, timeframe, opened_at desc);
-create index if not exists candles_asset_owner_idx on public.candles (asset_id, user_id);
 
 create table if not exists public.technical_analyses (
   id bigint generated always as identity primary key,
@@ -59,7 +58,6 @@ create table if not exists public.technical_analyses (
 );
 
 create index if not exists technical_user_asset_time_idx on public.technical_analyses (user_id, asset_id, timeframe, as_of desc);
-create index if not exists technical_asset_owner_idx on public.technical_analyses (asset_id, user_id);
 
 create table if not exists public.macro_observations (
   id bigint generated always as identity primary key,

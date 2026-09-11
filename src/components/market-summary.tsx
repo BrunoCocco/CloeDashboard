@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { SummaryItem } from "@/data/dashboard-demo";
+import type { SummaryItem } from "@/lib/dashboard";
 
 export function MarketSummary({ icon, item }: { icon: ReactNode; item: SummaryItem }) {
   return (
