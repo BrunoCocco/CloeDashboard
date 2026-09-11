@@ -1,4 +1,4 @@
-import type { PortfolioView } from "@/lib/portfolios";
+import type { OperatorStatus, PortfolioView } from "@/lib/portfolios";
 import { formatMoney } from "@/lib/portfolios";
 
 function formatPct(value: number | null) {
@@ -6,7 +6,7 @@ function formatPct(value: number | null) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
-export function PortfolioCard({ portfolio }: { portfolio: PortfolioView }) {
+export function PortfolioCard({ operator, portfolio }: { operator: OperatorStatus; portfolio: PortfolioView }) {
   const isSpot = portfolio.type === "spot";
   const performanceClass = portfolio.returnPct === null
     ? "text-muted"
@@ -84,20 +84,42 @@ export function PortfolioCard({ portfolio }: { portfolio: PortfolioView }) {
             <p className="mt-2 text-xs leading-5 text-muted">
               {isSpot
                 ? "La cartera comenzará a medir progreso cuando se cargue una posición."
-                : "El operador sigue en modo de prueba. Las operaciones simuladas aparecerán aquí sin mezclarse con capital real."}
+                : "Las operaciones simuladas aparecerán aquí sin mezclarse con capital real."}
             </p>
           </div>
-          {!isSpot ? (
-            <div className="mt-5">
-              <div className="mb-2 flex items-center justify-between text-xs">
-                <span className="text-zinc-300">Backtesting del operador</span>
-                <span className="font-mono text-muted">0 / 30 operaciones</span>
-              </div>
-              <div className="portfolio-track"><span className="portfolio-fill" style={{ width: "0%" }} /></div>
-            </div>
-          ) : null}
         </div>
       )}
+
+      {!isSpot && portfolio.mode === "simulation" ? (
+        <section className="border-t border-border bg-surface/30 p-5" aria-label="Estado del operador de futuros">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="metric-label">Operador de futuros</p>
+              <h3 className="mt-1 text-sm font-semibold text-white">Estado actual</h3>
+            </div>
+            <span className="badge badge-warning">Modo prueba</span>
+          </div>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div>
+              <dt className="metric-label">Decisión</dt>
+              <dd className="mt-1 text-sm font-semibold text-amber-300">{operator.label}</dd>
+            </div>
+            <div>
+              <dt className="metric-label">Mercados</dt>
+              <dd className="mt-1 text-sm font-semibold text-zinc-200">BTC · SOL</dd>
+            </div>
+            <div>
+              <dt className="metric-label">Gestión</dt>
+              <dd className="mt-1 text-sm font-semibold text-zinc-200">Solo largos · aislado</dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-xs leading-5 text-muted">
+            {operator.analysisDate
+              ? `Última síntesis: ${operator.analysisDate}. El registro de backtesting permanece separado de las carteras reales.`
+              : "Todavía no hay una síntesis operativa registrada. El progreso se mostrará cuando exista una fuente auditable de operaciones."}
+          </p>
+        </section>
+      ) : null}
     </article>
   );
 }
