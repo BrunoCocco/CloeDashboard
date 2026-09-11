@@ -1,5 +1,5 @@
 export type SummaryItem = { label: string; value: string; confidence: string; detail: string };
-export type MacroMetric = { name: string; value: string; direction: "Sin datos" | "Mixto"; note: string };
+export type MacroMetric = { name: string; value: string; direction: "Sin datos" | "Mixto" };
 export type AssetRow = { symbol: string; structure: string; wind: string; support: string; resistance: string; status: string };
 export type MarketEvent = { day: string; month: string; title: string; scope: string; impact: "Alto" | "Medio" };
 
@@ -7,7 +7,6 @@ export const dashboardDemo = {
   navigation: ["Resumen", "Técnico", "Fundamental", "Fechas", "Histórico"],
   summary: [
     { label: "Régimen general", value: "Neutral", confidence: "DEMO", detail: "Esperando la primera lectura consolidada" },
-    { label: "Coincidencia", value: "Sin cruce", confidence: "0/3", detail: "Técnico · Fundamental · Fechas" },
     { label: "Próximo evento", value: "Pendiente", confidence: "— DÍAS", detail: "Calendario todavía sin sincronizar" },
     { label: "Riesgo actual", value: "No evaluado", confidence: "DEMO", detail: "Sin operación hasta tener confirmaciones" },
   ] satisfies SummaryItem[],
@@ -26,12 +25,12 @@ export const dashboardDemo = {
     },
   ],
   macro: [
-    { name: "Liquidez neta Fed", value: "—", direction: "Sin datos", note: "WALCL − TGA − RRP" },
-    { name: "Global M2", value: "—", direction: "Sin datos", note: "Dirección y desfase con BTC" },
-    { name: "DXY", value: "—", direction: "Sin datos", note: "Viento monetario" },
-    { name: "Treasury 2Y / 10Y", value: "—", direction: "Sin datos", note: "Tipos y curva" },
-    { name: "Stablecoins", value: "—", direction: "Sin datos", note: "Liquidez cripto" },
-    { name: "Fear & Greed", value: "—", direction: "Sin datos", note: "Importante solo en extremos" },
+    { name: "Liquidez neta Fed", value: "—", direction: "Sin datos" },
+    { name: "Global M2", value: "—", direction: "Sin datos" },
+    { name: "DXY", value: "—", direction: "Sin datos" },
+    { name: "Treasury 2Y / 10Y", value: "—", direction: "Sin datos" },
+    { name: "Stablecoins", value: "—", direction: "Sin datos" },
+    { name: "Fear & Greed", value: "—", direction: "Sin datos" },
   ] satisfies MacroMetric[],
   assets: ["BTC", "SOL", "XRP", "HBAR", "XLM", "SHX", "VELO"].map((symbol) => ({
     symbol, structure: "Sin analizar", wind: "Sin cruce", support: "—", resistance: "—", status: "Pendiente",
