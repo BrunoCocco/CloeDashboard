@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { loadMarketQuotes } from "@/lib/market-prices";
 
 export type SummaryItem = {
   label: string;
@@ -106,16 +107,32 @@ function asArray(value: unknown) {
   return Array.isArray(value) ? value : [];
 }
 
+function numberFromRecord(value: unknown, key: string) {
+  if (!value || typeof value !== "object") return null;
+  const candidate = (value as JsonRecord)[key];
+  return typeof candidate === "number" && Number.isFinite(candidate) ? candidate : null;
+}
+
+function formatUsd(value: number | null) {
+  if (value === null) return "Precio no disponible";
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: value >= 100 ? 0 : 2,
+  }).format(value);
+}
+
 export async function loadDashboard(userId: string) {
   const supabase = await createClient();
 
-  const [assetsResult, technicalResult, macroResult, fundamentalResult, eventsResult, synthesisResult] = await Promise.all([
+  const [assetsResult, technicalResult, macroResult, fundamentalResult, eventsResult, synthesisResult, marketQuotes] = await Promise.all([
     supabase.from("assets").select("id, symbol, name, is_active").eq("user_id", userId).eq("is_active", true),
-    supabase.from("technical_analyses").select("asset_id, timeframe, as_of, bias, structure, volume_reading, support_levels, resistance_levels, confirmation").eq("user_id", userId).order("as_of", { ascending: false }).limit(100),
+    supabase.from("technical_analyses").select("asset_id, timeframe, as_of, bias, structure, volume_reading, support_levels, resistance_levels, confirmation, source_snapshot").eq("user_id", userId).order("as_of", { ascending: false }).limit(100),
     supabase.from("macro_observations").select("metric_key, observed_at, value, text_value, unit, direction").eq("user_id", userId).order("observed_at", { ascending: false }).limit(100),
     supabase.from("fundamental_analyses").select("as_of, regime, summary, confidence").eq("user_id", userId).order("as_of", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("market_events").select("scheduled_at, title, category, status, importance, affected_assets").eq("user_id", userId).in("status", ["announced", "confirmed"]).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
     supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, agreements, contradictions, conclusion, operator_action, information_cutoff").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
+    loadMarketQuotes(["BTC", "SOL"]),
   ]);
 
   const failed = [assetsResult, technicalResult, macroResult, fundamentalResult, eventsResult, synthesisResult]
@@ -197,9 +214,17 @@ export async function loadDashboard(userId: string) {
 
   const technical = ["BTC", "SOL"].map((symbol) => {
     const analysis = latestTechnical.get(symbol);
+    const liveQuote = marketQuotes.get(symbol);
+    const storedPrice = numberFromRecord(analysis?.source_snapshot, "price_usd");
+    const storedChange = numberFromRecord(analysis?.source_snapshot, "day_change_pct");
+    const price = liveQuote?.usd ?? storedPrice;
+    const change24h = liveQuote?.change24h ?? storedChange;
     return {
       symbol,
       mark: symbol === "BTC" ? "₿" : "S",
+      price: formatUsd(price),
+      change24h,
+      priceSource: liveQuote?.usd !== null && liveQuote?.usd !== undefined ? "CoinGecko" : "Último corte",
       timeframe: analysis ? analysis.timeframe.toUpperCase() : "Diario · 4H",
       bias: analysis ? biasLabels[analysis.bias] ?? analysis.bias : "Sin datos",
       reading: analysis?.structure ?? "Todavía no hay análisis técnico acumulado para este activo.",
@@ -243,7 +268,6 @@ export async function loadDashboard(userId: string) {
   const latestUpdate = updateCandidates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
 
   return {
-    navigation: ["Resumen", "Técnico", "Fundamental", "Fechas", "Histórico"],
     summary,
     technical,
     macro,

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Cloe IT"
+  short_description: "Implementa, verifica y publica cambios de Cloe"
+  brand_color: "#22D3EE"
+  default_prompt: "Usa $cloe-it para implementar, verificar y preparar la publicación de este cambio de Cloe Dashboard."
+policy:
+  allow_implicit_invocation: true

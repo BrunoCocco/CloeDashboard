@@ -1,4 +1,5 @@
-import { Activity, CalendarClock, Database, ShieldAlert } from "@/components/icons";
+import Link from "next/link";
+import { Activity, CalendarClock, Database, ShieldAlert, TrendDown, TrendUp, Wallet } from "@/components/icons";
 import { MarketSummary } from "@/components/market-summary";
 import { MacroPanel } from "@/components/macro-panel";
 import { AssetRadar } from "@/components/asset-radar";
@@ -24,7 +25,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-[1920px] flex-col px-5 py-4 lg:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border/80 pb-4">
+        <header className="grid items-center gap-4 border-b border-border/80 pb-4 md:grid-cols-[1fr_auto_1fr]">
           <div className="flex items-center gap-4">
             <div className="grid size-11 place-items-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 font-mono text-sm font-black tracking-[0.16em] text-cyan-300">
               CL
@@ -33,24 +34,21 @@ export default async function Home() {
               <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-cyan-300">
                 Market intelligence
               </p>
-              <h1 className="text-xl font-semibold tracking-tight text-white">Cloe Dashboard</h1>
+              <p className="text-sm font-semibold tracking-tight text-white">Cloe</p>
             </div>
           </div>
 
-          <nav aria-label="Secciones del dashboard" className="hidden items-center gap-1 rounded-lg border border-border bg-panel p-1 xl:flex">
-            {dashboard.navigation.map((item, index) => (
-              <span
-                className={index === 0 ? "nav-item nav-item-active" : "nav-item"}
-                key={item}
-              >
-                {item}
-              </span>
-            ))}
-          </nav>
+          <div className="order-first text-center md:order-none">
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted">Panel privado</p>
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">Bruno Dashboard</h1>
+          </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-3">
+            <Link className="button-secondary inline-flex items-center gap-2" href="/carteras">
+              <Wallet /> Carteras
+            </Link>
             <span className={dashboard.hasData ? "status-dot status-dot-live" : "status-dot"} aria-hidden="true" />
-            <div className="text-right">
+            <div className="hidden text-right xl:block">
               <p className="max-w-44 truncate font-mono text-[10px] uppercase tracking-wider text-muted">{userEmail}</p>
               <p className={dashboard.hasData ? "text-xs font-medium text-emerald-300" : "text-xs font-medium text-amber-300"}>
                 {dashboard.hasData ? "Datos sincronizados" : "Base conectada"}
@@ -93,7 +91,19 @@ export default async function Home() {
                       <span className="asset-symbol">{asset.mark}</span>
                       <div>
                         <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{asset.timeframe}</p>
-                        <h2 className="text-lg font-semibold text-white">{asset.symbol}</h2>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <h2 className="text-lg font-semibold text-white">{asset.symbol}</h2>
+                          <span className="font-mono text-sm font-semibold text-zinc-200">{asset.price}</span>
+                          {asset.change24h !== null ? (
+                            <span
+                              className={asset.change24h >= 0 ? "inline-flex items-center gap-1 text-xs text-emerald-300" : "inline-flex items-center gap-1 text-xs text-rose-300"}
+                              title={`Variación diaria · ${asset.priceSource}`}
+                            >
+                              {asset.change24h >= 0 ? <TrendUp /> : <TrendDown />}
+                              {Math.abs(asset.change24h).toFixed(2)}%
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                     <span className="badge badge-neutral">{asset.bias}</span>
