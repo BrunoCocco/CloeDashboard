@@ -108,7 +108,8 @@ body {
 
 .button-primary,
 .button-secondary,
-.button-ghost {
+.button-ghost,
+.button-danger {
   cursor: pointer;
   border-radius: 0.6rem;
   font-size: 0.875rem;
@@ -122,6 +123,9 @@ body {
 .button-secondary:hover { border-color: #3f4a5d; background: #1b2230; }
 .button-ghost { border: 1px solid var(--border); background: transparent; padding: 0.5rem 0.7rem; color: #a1a1aa; }
 .button-ghost:hover { border-color: #3f4a5d; color: white; }
+.button-danger { border: 1px solid rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.1); padding: 0.7rem 1rem; color: #fda4af; }
+.button-danger:hover { border-color: rgba(251, 113, 133, 0.75); background: rgba(244, 63, 94, 0.2); color: #ffe4e6; }
+.button-danger:focus-visible { outline: 2px solid #fb7185; outline-offset: 2px; }
 
 .form-alert {
   margin-top: 1.25rem;
