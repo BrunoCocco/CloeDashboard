@@ -27,3 +27,19 @@ export function CalendarClock() {
 export function ShieldAlert() {
   return <svg {...iconProps}><path d="M12 3 4.5 6v5.5c0 4.5 3 7.6 7.5 9.5 4.5-1.9 7.5-5 7.5-9.5V6L12 3Z" /><path d="M12 8v5m0 3h.01" /></svg>;
 }
+
+export function Wallet() {
+  return <svg {...iconProps}><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19v16H6.5A2.5 2.5 0 0 1 4 17.5v-11Z" /><path d="M4 7h15m-5 5h7v5h-7a2.5 2.5 0 0 1 0-5Z" /></svg>;
+}
+
+export function ArrowLeft() {
+  return <svg {...iconProps}><path d="m15 18-6-6 6-6" /></svg>;
+}
+
+export function TrendUp() {
+  return <svg {...iconProps}><path d="m5 15 5-5 4 4 5-6" /><path d="M14 8h5v5" /></svg>;
+}
+
+export function TrendDown() {
+  return <svg {...iconProps}><path d="m5 9 5 5 4-4 5 6" /><path d="M14 16h5v-5" /></svg>;
+}
