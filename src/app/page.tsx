@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, CalendarClock, Database, ShieldAlert, TrendDown, TrendUp, Wallet } from "@/components/icons";
+import { Activity, CalendarClock, ShieldAlert, TrendDown, TrendUp, Wallet } from "@/components/icons";
 import { MarketSummary } from "@/components/market-summary";
 import { MacroPanel } from "@/components/macro-panel";
 import { AssetRadar } from "@/components/asset-radar";
@@ -74,10 +74,17 @@ export default async function Home() {
           </span>
         </section>
 
-        <section aria-label="Resumen del mercado" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <section aria-label="Resumen del mercado" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {dashboard.summary.map((item, index) => {
-            const Icon = [Activity, Database, CalendarClock, ShieldAlert][index];
-            return <MarketSummary icon={<Icon />} item={item} key={item.label} />;
+            const Icon = [Activity, CalendarClock, ShieldAlert][index];
+            return (
+              <MarketSummary
+                className={index === 0 ? "sm:col-span-2 xl:col-span-2" : undefined}
+                icon={<Icon />}
+                item={item}
+                key={item.label}
+              />
+            );
           })}
         </section>
 
@@ -138,7 +145,7 @@ export default async function Home() {
         </section>
 
         <footer className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 font-mono text-[10px] uppercase tracking-wider text-muted">
-          <span>Datos → análisis independiente → cruce Cloe → decisión separada</span>
+          <span>DICIPLINA + CONSTANCIA = RESULTADOS</span>
           <span>Última actualización: {dashboard.lastUpdated}</span>
         </footer>
       </div>

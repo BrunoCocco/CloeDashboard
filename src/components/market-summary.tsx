@@ -1,9 +1,17 @@
 import type { ReactNode } from "react";
 import type { SummaryItem } from "@/lib/dashboard";
 
-export function MarketSummary({ icon, item }: { icon: ReactNode; item: SummaryItem }) {
+export function MarketSummary({
+  className,
+  icon,
+  item,
+}: {
+  className?: string;
+  icon: ReactNode;
+  item: SummaryItem;
+}) {
   return (
-    <article className="panel flex min-h-28 items-center justify-between gap-3 p-4">
+    <article className={`panel flex min-h-28 items-center justify-between gap-3 p-4 ${className ?? ""}`}>
       <div>
         <p className="metric-label">{item.label}</p>
         <div className="mt-2 flex items-baseline gap-2">

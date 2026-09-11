@@ -12,7 +12,6 @@ export type MacroMetric = {
   name: string;
   value: string;
   direction: "Sube" | "Baja" | "Mixto" | "Sin datos";
-  note: string;
 };
 
 export type AssetRow = {
@@ -59,12 +58,12 @@ const directionLabels: Record<string, MacroMetric["direction"]> = {
 };
 
 const macroDefinitions = [
-  { key: "net_fed_liquidity", name: "Liquidez neta Fed", note: "WALCL − TGA − RRP" },
-  { key: "global_m2", name: "Global M2", note: "Dirección y desfase con BTC" },
-  { key: "dxy", name: "DXY", note: "Viento monetario" },
-  { key: "treasury_2y_10y", name: "Treasury 2Y / 10Y", note: "Tipos y curva" },
-  { key: "stablecoin_supply", name: "Stablecoins", note: "Liquidez cripto" },
-  { key: "fear_greed", name: "Fear & Greed", note: "Importante solo en extremos" },
+  { key: "net_fed_liquidity", name: "Liquidez neta Fed" },
+  { key: "global_m2", name: "Global M2" },
+  { key: "dxy", name: "DXY" },
+  { key: "treasury_2y_10y", name: "Treasury 2Y / 10Y" },
+  { key: "stablecoin_supply", name: "Stablecoins" },
+  { key: "fear_greed", name: "Fear & Greed" },
 ] as const;
 
 function firstJsonValue(value: unknown) {
@@ -103,10 +102,6 @@ function formatDate(value: string | null | undefined) {
   }).format(date);
 }
 
-function asArray(value: unknown) {
-  return Array.isArray(value) ? value : [];
-}
-
 function numberFromRecord(value: unknown, key: string) {
   if (!value || typeof value !== "object") return null;
   const candidate = (value as JsonRecord)[key];
@@ -128,10 +123,10 @@ export async function loadDashboard(userId: string) {
   const [assetsResult, technicalResult, macroResult, fundamentalResult, eventsResult, synthesisResult, marketQuotes] = await Promise.all([
     supabase.from("assets").select("id, symbol, name, is_active").eq("user_id", userId).eq("is_active", true),
     supabase.from("technical_analyses").select("asset_id, timeframe, as_of, bias, structure, volume_reading, support_levels, resistance_levels, confirmation, source_snapshot").eq("user_id", userId).order("as_of", { ascending: false }).limit(100),
-    supabase.from("macro_observations").select("metric_key, observed_at, value, text_value, unit, direction").eq("user_id", userId).order("observed_at", { ascending: false }).limit(100),
+    supabase.from("macro_observations").select("metric_key, observed_at, value, unit, direction").eq("user_id", userId).order("observed_at", { ascending: false }).limit(100),
     supabase.from("fundamental_analyses").select("as_of, regime, summary, confidence").eq("user_id", userId).order("as_of", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("market_events").select("scheduled_at, title, category, status, importance, affected_assets").eq("user_id", userId).in("status", ["announced", "confirmed"]).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
-    supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, agreements, contradictions, conclusion, operator_action, information_cutoff").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, conclusion, operator_action, information_cutoff").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
     loadMarketQuotes(["BTC", "SOL"]),
   ]);
 
@@ -181,7 +176,6 @@ export async function loadDashboard(userId: string) {
   });
 
   const nextEvent = upcomingEvents.find((event) => event.scheduled_at);
-  const agreements = asArray(synthesis?.agreements);
   const regime = synthesis?.general_regime ?? fundamental?.regime ?? "insufficient_data";
   const hasData = technicalRows.length + macroRows.length + eventRows.length + (synthesis ? 1 : 0) + (fundamental ? 1 : 0) > 0;
 
@@ -191,12 +185,6 @@ export async function loadDashboard(userId: string) {
       value: regimeLabels[regime] ?? "Sin datos",
       confidence: fundamental?.confidence !== null && fundamental?.confidence !== undefined ? `${fundamental.confidence}%` : "—",
       detail: synthesis?.conclusion ?? fundamental?.summary ?? "Esperando la primera lectura consolidada",
-    },
-    {
-      label: "Coincidencia",
-      value: agreements.length > 0 ? `${agreements.length} coincidencias` : "Sin cruce",
-      confidence: synthesis ? "CLOE" : "0/3",
-      detail: "Técnico · Fundamental · Fechas",
     },
     {
       label: "Próximo evento",
@@ -253,9 +241,8 @@ export async function loadDashboard(userId: string) {
     const observation = latestMacro.get(definition.key);
     return {
       name: definition.name,
-      value: observation?.text_value ?? formatMetric(observation?.value, observation?.unit),
+      value: formatMetric(observation?.value, observation?.unit),
       direction: observation ? directionLabels[observation.direction ?? "unknown"] ?? "Sin datos" : "Sin datos",
-      note: definition.note,
     };
   });
 
