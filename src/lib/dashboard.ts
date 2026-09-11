@@ -46,6 +46,20 @@ const regimeLabels: Record<string, string> = {
   insufficient_data: "Sin datos",
 };
 
+const regimeDetails: Record<string, string> = {
+  favorable: "Condiciones generales favorables según la última lectura disponible.",
+  neutral: "Condiciones mixtas, sin una dirección general dominante.",
+  negative: "Condiciones generales adversas según la última lectura disponible.",
+  insufficient_data: "Esperando una lectura informativa consolidada.",
+};
+
+const riskDetails: Record<string, string> = {
+  high: "Entorno de elevada incertidumbre y volatilidad.",
+  medium: "Entorno con riesgos relevantes que requieren seguimiento.",
+  low: "Entorno de riesgo contenido según la última síntesis.",
+  unknown: "Todavía no hay una evaluación consolidada del riesgo.",
+};
+
 const biasLabels: Record<string, string> = {
   bullish: "Alcista",
   neutral: "Neutral",
@@ -188,7 +202,7 @@ export async function loadDashboard(userId: string) {
     Promise.all(macroRequests),
     supabase.from("fundamental_analyses").select("as_of, regime, summary, confidence").eq("user_id", userId).order("as_of", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("market_events").select("scheduled_at, title, category, status, importance, affected_assets").eq("user_id", userId).in("status", ["announced", "confirmed"]).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
-    supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, conclusion, operator_action, information_cutoff").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, information_cutoff").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
     loadMarketQuotes(["BTC", "SOL"]),
   ]);
 
@@ -239,7 +253,6 @@ export async function loadDashboard(userId: string) {
     };
   });
 
-  const nextEvent = upcomingEvents.find((event) => event.scheduled_at);
   const regime = synthesis?.general_regime ?? fundamental?.regime ?? "insufficient_data";
   const hasData = technicalRows.length + macroRows.length + eventRows.length + (synthesis ? 1 : 0) + (fundamental ? 1 : 0) > 0;
 
@@ -248,19 +261,13 @@ export async function loadDashboard(userId: string) {
       label: "Régimen general",
       value: regimeLabels[regime] ?? "Sin datos",
       confidence: fundamental?.confidence !== null && fundamental?.confidence !== undefined ? `${fundamental.confidence}%` : "—",
-      detail: synthesis?.conclusion ?? fundamental?.summary ?? "Esperando la primera lectura consolidada",
-    },
-    {
-      label: "Próximo evento",
-      value: nextEvent?.title ?? "Pendiente",
-      confidence: nextEvent?.scheduled_at ? formatDate(nextEvent.scheduled_at)?.split(",")[0] ?? "—" : "—",
-      detail: nextEvent?.category ?? "Calendario todavía sin registros",
+      detail: fundamental?.summary ?? regimeDetails[regime] ?? regimeDetails.insufficient_data,
     },
     {
       label: "Riesgo actual",
       value: synthesis?.risk_level === "high" ? "Alto" : synthesis?.risk_level === "medium" ? "Medio" : synthesis?.risk_level === "low" ? "Bajo" : "No evaluado",
-      confidence: synthesis?.operator_action === "no_operation" ? "SIN OPERACIÓN" : "SEÑAL",
-      detail: synthesis ? `Operador: ${synthesis.operator_action.replaceAll("_", " ")}` : "Sin operación hasta tener confirmaciones",
+      confidence: "RIESGO DE MERCADO",
+      detail: riskDetails[synthesis?.risk_level ?? "unknown"] ?? riskDetails.unknown,
     },
   ];
 

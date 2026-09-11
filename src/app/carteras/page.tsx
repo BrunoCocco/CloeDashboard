@@ -16,7 +16,7 @@ export default async function PortfoliosPage() {
 
   if (!userId) redirect("/login");
 
-  const portfolios = await loadPortfolios(userId);
+  const { portfolios, operator } = await loadPortfolios(userId);
   const userEmail = typeof claims?.email === "string" ? claims.email : "Cuenta activa";
 
   return (
@@ -50,7 +50,7 @@ export default async function PortfoliosPage() {
         </section>
 
         <section className="grid content-start gap-4 xl:grid-cols-2" aria-label="Carteras privadas">
-          {portfolios.map((portfolio) => <PortfolioCard key={portfolio.id} portfolio={portfolio} />)}
+          {portfolios.map((portfolio) => <PortfolioCard key={portfolio.id} operator={operator} portfolio={portfolio} />)}
         </section>
 
         <footer className="mt-auto pt-6 text-center font-mono text-[10px] uppercase tracking-wider text-muted">
