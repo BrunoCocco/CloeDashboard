@@ -25,17 +25,14 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-[1920px] flex-col px-5 py-4 lg:px-8">
-        <header className="grid items-center gap-4 border-b border-border/80 pb-4 md:grid-cols-[1fr_auto_1fr]">
-          <div className="flex items-center gap-4">
-            <div className="grid size-11 place-items-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 font-mono text-sm font-black tracking-[0.16em] text-cyan-300">
-              CL
+        <header className="mb-2 grid items-center gap-4 border-b border-border/80 pb-4 md:grid-cols-[1fr_auto_1fr]">
+          <div className="flex items-center gap-3">
+            <div className="grid h-11 min-w-16 place-items-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 font-mono text-xs font-black tracking-[0.14em] text-cyan-300">
+              CLOE
             </div>
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-cyan-300">
-                Market intelligence
-              </p>
-              <p className="text-sm font-semibold tracking-tight text-white">Cloe</p>
-            </div>
+            <p className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300 sm:text-base">
+              Market intelligence
+            </p>
           </div>
 
           <div className="order-first text-center md:order-none">
@@ -43,19 +40,12 @@ export default async function Home() {
             <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">Bruno Dashboard</h1>
           </div>
 
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end gap-2">
             <Link className="button-secondary inline-flex items-center gap-2" href="/carteras">
               <Wallet /> Carteras
             </Link>
-            <span className={dashboard.hasData ? "status-dot status-dot-live" : "status-dot"} aria-hidden="true" />
-            <div className="hidden text-right xl:block">
-              <p className="max-w-44 truncate font-mono text-[10px] uppercase tracking-wider text-muted">{userEmail}</p>
-              <p className={dashboard.hasData ? "text-xs font-medium text-emerald-300" : "text-xs font-medium text-amber-300"}>
-                {dashboard.hasData ? "Datos sincronizados" : "Base conectada"}
-              </p>
-            </div>
             <form action={signOut}>
-              <button className="button-ghost" type="submit">Salir</button>
+              <button className="button-danger" type="submit">Salir</button>
             </form>
           </div>
         </header>
@@ -144,9 +134,18 @@ export default async function Home() {
           </span>
         </section>
 
-        <footer className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 font-mono text-[10px] uppercase tracking-wider text-muted">
+        <footer className="mt-3 grid items-center gap-3 border-t border-border pt-3 text-center font-mono text-[10px] uppercase tracking-wider text-muted sm:grid-cols-2 xl:grid-cols-[1fr_auto_1fr] xl:text-left">
           <span>DICIPLINA + CONSTANCIA = RESULTADOS</span>
-          <span>Última actualización: {dashboard.lastUpdated}</span>
+          <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-end xl:justify-center">
+            <span className="max-w-48 truncate" title={userEmail}>{userEmail}</span>
+            <span className="inline-flex items-center gap-2">
+              <span className={dashboard.hasData ? "status-dot status-dot-live" : "status-dot"} aria-hidden="true" />
+              <span className={dashboard.hasData ? "font-semibold text-emerald-300" : "font-semibold text-amber-300"}>
+                {dashboard.hasData ? "Datos sincronizados" : "Base conectada"}
+              </span>
+            </span>
+          </div>
+          <span className="sm:col-span-2 sm:text-right xl:col-span-1">Última actualización: {dashboard.lastUpdated}</span>
         </footer>
       </div>
     </main>
