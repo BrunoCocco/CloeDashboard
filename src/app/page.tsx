@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, CalendarClock, ShieldAlert, TrendDown, TrendUp, Wallet } from "@/components/icons";
+import { Activity, ShieldAlert, TrendDown, TrendUp, Wallet } from "@/components/icons";
 import { MarketSummary } from "@/components/market-summary";
 import { MacroPanel } from "@/components/macro-panel";
 import { AssetRadar } from "@/components/asset-radar";
@@ -52,10 +52,10 @@ export default async function Home() {
 
         <section aria-label="Resumen del mercado" className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {dashboard.summary.map((item, index) => {
-            const Icon = [Activity, CalendarClock, ShieldAlert][index];
+            const Icon = [Activity, ShieldAlert][index];
             return (
               <MarketSummary
-                className={index === 0 ? "sm:col-span-2 xl:col-span-2" : undefined}
+                className="xl:col-span-2"
                 icon={<Icon />}
                 item={item}
                 key={item.label}
