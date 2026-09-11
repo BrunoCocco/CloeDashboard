@@ -60,21 +60,7 @@ export default async function Home() {
           </div>
         </header>
 
-        <section className={dashboard.hasData ? "my-4 flex items-center justify-between gap-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-2.5 text-sm text-emerald-100" : "my-4 flex items-center justify-between gap-4 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-4 py-2.5 text-sm text-amber-100"}>
-          <p>
-            <strong className={dashboard.hasData ? "font-semibold text-emerald-300" : "font-semibold text-amber-300"}>
-              {dashboard.hasData ? "Histórico activo." : "Esperando el primer análisis."}
-            </strong>{" "}
-            {dashboard.hasData
-              ? "La pantalla refleja los registros privados almacenados en Supabase."
-              : "La conexión funciona; los paneles se completarán cuando Cloe guarde datos."}
-          </p>
-          <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-300/80 sm:block">
-            Producción
-          </span>
-        </section>
-
-        <section aria-label="Resumen del mercado" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section aria-label="Resumen del mercado" className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {dashboard.summary.map((item, index) => {
             const Icon = [Activity, CalendarClock, ShieldAlert][index];
             return (
@@ -142,6 +128,20 @@ export default async function Home() {
             <MacroPanel metrics={dashboard.macro} />
             <EventsPanel events={dashboard.events} />
           </aside>
+        </section>
+
+        <section className={dashboard.hasData ? "mt-3 flex items-center justify-between gap-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-2.5 text-sm text-emerald-100" : "mt-3 flex items-center justify-between gap-4 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-4 py-2.5 text-sm text-amber-100"}>
+          <p>
+            <strong className={dashboard.hasData ? "font-semibold text-emerald-300" : "font-semibold text-amber-300"}>
+              {dashboard.hasData ? "Histórico activo." : "Esperando el primer análisis."}
+            </strong>{" "}
+            {dashboard.hasData
+              ? "La pantalla refleja los registros privados almacenados en Supabase."
+              : "La conexión funciona; los paneles se completarán cuando Cloe guarde datos."}
+          </p>
+          <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-300/80 sm:block">
+            Producción
+          </span>
         </section>
 
         <footer className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 font-mono text-[10px] uppercase tracking-wider text-muted">

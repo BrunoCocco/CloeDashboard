@@ -11,7 +11,9 @@ export type SummaryItem = {
 export type MacroMetric = {
   name: string;
   value: string;
-  direction: "Sube" | "Baja" | "Mixto" | "Sin datos";
+  delta: string | null;
+  direction: "Sube" | "Baja" | "Estable" | "Mixto" | "Sin datos";
+  source: { name: string; url: string | null } | null;
 };
 
 export type AssetRow = {
@@ -52,7 +54,7 @@ const biasLabels: Record<string, string> = {
 const directionLabels: Record<string, MacroMetric["direction"]> = {
   rising: "Sube",
   falling: "Baja",
-  flat: "Mixto",
+  flat: "Estable",
   mixed: "Mixto",
   unknown: "Sin datos",
 };
@@ -61,9 +63,10 @@ const macroDefinitions = [
   { key: "net_fed_liquidity", name: "Liquidez neta Fed" },
   { key: "global_m2", name: "Global M2" },
   { key: "dxy", name: "DXY" },
-  { key: "treasury_2y_10y", name: "Treasury 2Y / 10Y" },
+  { key: "treasury_2y", name: "Treasury 2 años" },
+  { key: "treasury_10y", name: "Treasury 10 años" },
   { key: "stablecoin_supply", name: "Stablecoins" },
-  { key: "fear_greed", name: "Fear & Greed" },
+  { key: "fear_greed", name: "Miedo y codicia" },
 ] as const;
 
 function firstJsonValue(value: unknown) {
@@ -87,6 +90,54 @@ function formatMetric(value: unknown, unit: unknown) {
     ? new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 }).format(numeric)
     : String(value);
   return typeof unit === "string" && unit ? `${formatted} ${unit}` : formatted;
+}
+
+function numericMetric(value: unknown) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function formatMacroValue(key: string, value: unknown, unit: unknown) {
+  const numeric = numericMetric(value);
+  if (numeric === null) return "—";
+
+  if (key === "treasury_2y" || key === "treasury_10y") {
+    return `${new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numeric)}%`;
+  }
+
+  if (key === "fear_greed") {
+    return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(numeric);
+  }
+
+  return formatMetric(value, unit);
+}
+
+function dailyChange(key: string, current: unknown, previous: unknown) {
+  if (!["treasury_2y", "treasury_10y", "fear_greed"].includes(key)) return null;
+
+  const currentValue = numericMetric(current);
+  const previousValue = numericMetric(previous);
+  if (currentValue === null || previousValue === null) return null;
+
+  const change = currentValue - previousValue;
+  const digits = key === "fear_greed" ? 0 : 2;
+  const formatted = new Intl.NumberFormat("es-ES", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+    signDisplay: "always",
+  }).format(change);
+  const suffix = key === "fear_greed" ? "" : " pp";
+  return `Δ vs. anterior ${formatted}${suffix}`;
+}
+
+function directionFromValues(current: unknown, previous: unknown, fallback: MacroMetric["direction"]) {
+  const currentValue = numericMetric(current);
+  const previousValue = numericMetric(previous);
+  if (currentValue === null || previousValue === null) return fallback;
+  const difference = currentValue - previousValue;
+  if (difference > 1e-9) return "Sube";
+  if (difference < -1e-9) return "Baja";
+  return "Estable";
 }
 
 function formatDate(value: string | null | undefined) {
@@ -119,24 +170,33 @@ function formatUsd(value: number | null) {
 
 export async function loadDashboard(userId: string) {
   const supabase = await createClient();
+  const macroRequests = macroDefinitions.map((definition) =>
+    supabase
+      .from("macro_observations")
+      .select("metric_key, observed_at, value, unit, direction, source_name, source_url")
+      .eq("user_id", userId)
+      .eq("metric_key", definition.key)
+      .order("observed_at", { ascending: false })
+      .limit(2)
+  );
 
-  const [assetsResult, technicalResult, macroResult, fundamentalResult, eventsResult, synthesisResult, marketQuotes] = await Promise.all([
+  const [assetsResult, technicalResult, macroResults, fundamentalResult, eventsResult, synthesisResult, marketQuotes] = await Promise.all([
     supabase.from("assets").select("id, symbol, name, is_active").eq("user_id", userId).eq("is_active", true),
     supabase.from("technical_analyses").select("asset_id, timeframe, as_of, bias, structure, volume_reading, support_levels, resistance_levels, confirmation, source_snapshot").eq("user_id", userId).order("as_of", { ascending: false }).limit(100),
-    supabase.from("macro_observations").select("metric_key, observed_at, value, unit, direction").eq("user_id", userId).order("observed_at", { ascending: false }).limit(100),
+    Promise.all(macroRequests),
     supabase.from("fundamental_analyses").select("as_of, regime, summary, confidence").eq("user_id", userId).order("as_of", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("market_events").select("scheduled_at, title, category, status, importance, affected_assets").eq("user_id", userId).in("status", ["announced", "confirmed"]).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
     supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, conclusion, operator_action, information_cutoff").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
     loadMarketQuotes(["BTC", "SOL"]),
   ]);
 
-  const failed = [assetsResult, technicalResult, macroResult, fundamentalResult, eventsResult, synthesisResult]
+  const failed = [assetsResult, technicalResult, ...macroResults, fundamentalResult, eventsResult, synthesisResult]
     .find((result) => result.error);
   if (failed?.error) throw new Error(failed.error.message);
 
   const assets = assetsResult.data ?? [];
   const technicalRows = technicalResult.data ?? [];
-  const macroRows = macroResult.data ?? [];
+  const macroRows = macroResults.flatMap((result) => result.data ?? []);
   const eventRows = eventsResult.data ?? [];
   const synthesis = synthesisResult.data;
   const fundamental = fundamentalResult.data;
@@ -149,9 +209,11 @@ export async function loadDashboard(userId: string) {
     if (symbol && !latestTechnical.has(symbol)) latestTechnical.set(symbol, analysis);
   });
 
-  const latestMacro = new Map<string, (typeof macroRows)[number]>();
+  const macroHistory = new Map<string, (typeof macroRows)[number][]>();
   macroRows.forEach((observation) => {
-    if (!latestMacro.has(observation.metric_key)) latestMacro.set(observation.metric_key, observation);
+    const history = macroHistory.get(observation.metric_key) ?? [];
+    history.push(observation);
+    macroHistory.set(observation.metric_key, history);
   });
 
   const now = Date.now();
@@ -238,11 +300,20 @@ export async function loadDashboard(userId: string) {
   });
 
   const macro: MacroMetric[] = macroDefinitions.map((definition) => {
-    const observation = latestMacro.get(definition.key);
+    const history = macroHistory.get(definition.key) ?? [];
+    const observation = history[0];
+    const previous = history[1];
+    const fallbackDirection = observation
+      ? directionLabels[observation.direction ?? "unknown"] ?? "Sin datos"
+      : "Sin datos";
     return {
       name: definition.name,
-      value: formatMetric(observation?.value, observation?.unit),
-      direction: observation ? directionLabels[observation.direction ?? "unknown"] ?? "Sin datos" : "Sin datos",
+      value: formatMacroValue(definition.key, observation?.value, observation?.unit),
+      delta: dailyChange(definition.key, observation?.value, previous?.value),
+      direction: directionFromValues(observation?.value, previous?.value, fallbackDirection),
+      source: observation
+        ? { name: observation.source_name, url: observation.source_url }
+        : null,
     };
   });
 
@@ -250,7 +321,7 @@ export async function loadDashboard(userId: string) {
     synthesis?.information_cutoff,
     fundamental?.as_of,
     technicalRows[0]?.as_of,
-    macroRows[0]?.observed_at,
+    ...macroRows.map((row) => row.observed_at),
   ].filter((value): value is string => Boolean(value));
   const latestUpdate = updateCandidates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
 
