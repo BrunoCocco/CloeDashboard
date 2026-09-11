@@ -11,8 +11,7 @@ export const dashboardDemo = {
   navigation: ["Resumen", "Técnico", "Fundamental", "Fechas", "Histórico"],
   summary: [
     { label: "Régimen general", value: "Neutral", confidence: "DEMO", detail: "Esperando la primera lectura consolidada" },
-    { label: "Próximo evento", value: "Pendiente", confidence: "— DÍAS", detail: "Calendario todavía sin sincronizar" },
-    { label: "Riesgo actual", value: "No evaluado", confidence: "DEMO", detail: "Sin operación hasta tener confirmaciones" },
+    { label: "Riesgo actual", value: "No evaluado", confidence: "RIESGO DE MERCADO", detail: "Todavía no hay una evaluación consolidada del riesgo." },
   ] satisfies SummaryItem[],
   technical: [
     {
