@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { loadMarketQuotes } from "@/lib/market-prices";
+import { classifyFearGreed, type FearGreedTone } from "@/lib/fear-greed";
 
 export type SummaryItem = {
   label: string;
@@ -13,6 +14,7 @@ export type MacroMetric = {
   value: string;
   delta: string | null;
   direction: "Sube" | "Baja" | "Estable" | "Mixto" | "Sin datos";
+  tone: FearGreedTone | null;
   source: { name: string; url: string | null } | null;
 };
 
@@ -303,14 +305,18 @@ export async function loadDashboard(userId: string) {
     const history = macroHistory.get(definition.key) ?? [];
     const observation = history[0];
     const previous = history[1];
+    const fearGreedState = definition.key === "fear_greed"
+      ? classifyFearGreed(observation?.value)
+      : null;
     const fallbackDirection = observation
       ? directionLabels[observation.direction ?? "unknown"] ?? "Sin datos"
       : "Sin datos";
     return {
-      name: definition.name,
+      name: fearGreedState?.label ?? definition.name,
       value: formatMacroValue(definition.key, observation?.value, observation?.unit),
       delta: dailyChange(definition.key, observation?.value, previous?.value),
       direction: directionFromValues(observation?.value, previous?.value, fallbackDirection),
+      tone: fearGreedState?.tone ?? null,
       source: observation
         ? { name: observation.source_name, url: observation.source_url }
         : null,
