@@ -18,7 +18,7 @@ export function MarketSummary({
           <strong className="text-xl font-semibold tracking-tight text-white">{item.value}</strong>
           <span className="font-mono text-[10px] text-muted">{item.confidence}</span>
         </div>
-        <p className="mt-1.5 text-xs text-zinc-400">{item.detail}</p>
+        <p className="mt-1.5 text-sm leading-5 text-zinc-400">{item.detail}</p>
       </div>
       <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-surface text-cyan-300">{icon}</span>
     </article>
