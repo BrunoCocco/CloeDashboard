@@ -94,13 +94,19 @@ export default async function Home() {
 
                   <p className="mt-4 text-sm leading-6 text-zinc-300">{asset.reading}</p>
 
-                  <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3">
-                    {asset.levels.map((level) => (
-                      <div key={level.label}>
-                        <dt className="metric-label">{level.label}</dt>
-                        <dd className="mt-1 font-mono text-sm font-semibold text-zinc-200">{level.value}</dd>
-                      </div>
-                    ))}
+                  <dl className="mt-4 grid grid-cols-2 gap-x-2 gap-y-3 border-t border-border pt-3">
+                    {asset.levels.map((level) => {
+                      const isVolume = level.label.toLocaleLowerCase("es").includes("volumen");
+
+                      return (
+                        <div className={isVolume ? "col-span-2 min-w-0 border-t border-border/70 pt-3" : "min-w-0"} key={level.label}>
+                          <dt className="metric-label">{level.label}</dt>
+                          <dd className={isVolume ? "mt-1 whitespace-normal break-words font-mono text-sm font-semibold leading-5 text-zinc-200" : "mt-1 font-mono text-sm font-semibold text-zinc-200"}>
+                            {level.value}
+                          </dd>
+                        </div>
+                      );
+                    })}
                   </dl>
 
                   <div className="mt-3 flex items-center justify-between rounded-md bg-surface px-3 py-2 text-xs">
