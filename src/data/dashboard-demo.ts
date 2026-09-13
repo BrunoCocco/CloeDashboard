@@ -28,7 +28,7 @@ export const dashboardDemo = {
     },
   ],
   macro: [
-    { name: "Liquidez neta Fed", value: "—", delta: null, direction: "Sin datos", tone: null, source: null },
+    { name: "Liquidez neta de la Fed", value: "—", delta: null, direction: "Sin datos", tone: null, source: null },
     { name: "Global M2", value: "—", delta: null, direction: "Sin datos", tone: null, source: null },
     { name: "DXY", value: "—", delta: null, direction: "Sin datos", tone: null, source: null },
     { name: "Treasury 2 años", value: "4,43%", delta: "Δ vs. anterior +0,04 pp", direction: "Mixto", tone: null, source: { name: "FRED DGS2", url: "https://fred.stlouisfed.org/series/DGS2" } },
