@@ -18,28 +18,26 @@ export function MacroPanel({ metrics }: { metrics: MacroMetric[] }) {
       </div>
       <div className="mt-4 divide-y divide-border">
         {metrics.map((metric) => (
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_2.25rem] items-center gap-3 py-2.5" key={metric.name}>
-            <div className="min-w-0">
-              <p className={`text-xs font-semibold ${metric.tone ? sentimentClasses[metric.tone] : "text-zinc-200"}`}>
-                {metric.name}
-              </p>
-              {metric.source ? (
-                metric.source.url ? (
-                  <a className="mt-1 inline-block text-[10px] text-cyan-300/75 hover:text-cyan-300 hover:underline" href={metric.source.url} rel="noreferrer" target="_blank">
-                    {metric.source.name}
-                  </a>
-                ) : <span className="mt-1 block text-[10px] text-muted">{metric.source.name}</span>
-              ) : null}
-            </div>
-            <div className="text-right font-mono tabular-nums">
+          <div className="grid grid-cols-[minmax(0,1fr)_2.25rem] items-center gap-x-3 gap-y-1 py-2.5 sm:grid-cols-[minmax(0,1fr)_auto_2.25rem]" key={metric.name}>
+            <p className={`col-span-2 min-w-0 text-xs font-semibold sm:col-span-1 sm:col-start-1 sm:row-start-1 ${metric.tone ? sentimentClasses[metric.tone] : "text-zinc-200"}`}>
+              {metric.name}
+            </p>
+            <div className="col-start-1 row-start-2 font-mono tabular-nums sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:self-center sm:text-right">
               <p className={`text-xs font-semibold ${metric.tone ? sentimentClasses[metric.tone] : "text-zinc-200"}`}>
                 {metric.value}
               </p>
               <p className="mt-0.5 text-[10px] text-zinc-400">{metric.delta ?? "Variación no disponible"}</p>
             </div>
-            <span className={metric.direction === "Sube" ? "inline-grid size-9 place-items-center text-3xl font-black leading-none text-emerald-300" : metric.direction === "Baja" ? "inline-grid size-9 place-items-center text-3xl font-black leading-none text-rose-300" : metric.direction === "Estable" ? "inline-grid size-9 place-items-center text-3xl font-black leading-none text-cyan-300" : metric.direction === "Mixto" ? "inline-grid size-9 place-items-center text-3xl font-black leading-none text-amber-300" : "inline-grid size-9 place-items-center text-3xl font-black leading-none text-zinc-500"} aria-label={`Dirección: ${metric.direction}`}>
+            <span className={`${metric.direction === "Sube" ? "text-emerald-300" : metric.direction === "Baja" ? "text-rose-300" : metric.direction === "Estable" ? "text-cyan-300" : metric.direction === "Mixto" ? "text-amber-300" : "text-zinc-500"} col-start-2 row-start-2 inline-grid size-9 place-items-center text-3xl font-black leading-none sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:self-center`} aria-label={`Dirección: ${metric.direction}`}>
               {metric.direction === "Sube" ? "↑" : metric.direction === "Baja" ? "↓" : metric.direction === "Estable" ? "→" : metric.direction === "Mixto" ? "◆" : "—"}
             </span>
+            {metric.source ? (
+              metric.source.url ? (
+                <a className="col-span-2 col-start-1 row-start-3 text-[10px] text-cyan-300/75 hover:text-cyan-300 hover:underline sm:col-span-1 sm:row-start-2" href={metric.source.url} rel="noreferrer" target="_blank">
+                  {metric.source.name}
+                </a>
+              ) : <span className="col-span-2 col-start-1 row-start-3 text-[10px] text-muted sm:col-span-1 sm:row-start-2">{metric.source.name}</span>
+            ) : null}
           </div>
         ))}
       </div>
