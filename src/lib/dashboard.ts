@@ -77,11 +77,11 @@ const directionLabels: Record<string, MacroMetric["direction"]> = {
 
 const macroDefinitions = [
   { key: "net_fed_liquidity", name: "Liquidez neta Fed" },
-  { key: "global_m2", name: "Global M2" },
+  { key: "m2_usa", name: "M2 EE. UU." },
   { key: "dxy", name: "DXY" },
   { key: "treasury_2y", name: "Treasury 2 años" },
   { key: "treasury_10y", name: "Treasury 10 años" },
-  { key: "stablecoin_supply", name: "Stablecoins" },
+  { key: "stablecoin_market_cap", name: "Capitalización stablecoins" },
   { key: "fear_greed", name: "Miedo y codicia" },
 ] as const;
 
