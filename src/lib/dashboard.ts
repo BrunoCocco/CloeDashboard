@@ -31,7 +31,6 @@ export type MarketEvent = {
   day: string;
   month: string;
   title: string;
-  scope: string;
   impact: "Alto" | "Medio" | "Bajo";
 };
 
@@ -201,7 +200,7 @@ export async function loadDashboard(userId: string) {
     supabase.from("technical_analyses").select("asset_id, timeframe, as_of, bias, structure, volume_reading, support_levels, resistance_levels, confirmation, source_snapshot").eq("user_id", userId).order("as_of", { ascending: false }).limit(100),
     Promise.all(macroRequests),
     supabase.from("fundamental_analyses").select("as_of, regime, summary, confidence").eq("user_id", userId).order("as_of", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("market_events").select("scheduled_at, title, category, status, importance, affected_assets").eq("user_id", userId).in("status", ["announced", "confirmed"]).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
+    supabase.from("market_events").select("scheduled_at, title, status, importance").eq("user_id", userId).in("status", ["announced", "confirmed"]).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
     supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, information_cutoff").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
     loadMarketQuotes(["BTC", "SOL"]),
   ]);
@@ -240,15 +239,10 @@ export async function loadDashboard(userId: string) {
 
   const eventView: MarketEvent[] = upcomingEvents.slice(0, 5).map((event) => {
     const date = event.scheduled_at ? new Date(event.scheduled_at) : null;
-    const affected = Array.isArray(event.affected_assets) && event.affected_assets.length > 0
-      ? event.affected_assets.join(" · ")
-      : event.category;
-
     return {
       day: date ? new Intl.DateTimeFormat("es-ES", { day: "2-digit", timeZone: "Europe/Madrid" }).format(date) : "—",
       month: date ? new Intl.DateTimeFormat("es-ES", { month: "short", timeZone: "Europe/Madrid" }).format(date).replace(".", "") : "S/F",
       title: event.title,
-      scope: affected,
       impact: event.importance === "critical" || event.importance === "high" ? "Alto" : event.importance === "medium" ? "Medio" : "Bajo",
     };
   });
