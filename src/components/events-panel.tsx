@@ -15,7 +15,7 @@ export function EventsPanel({ events }: { events: MarketEvent[] }) {
         {events.map((event, index) => (
           <li className="grid grid-cols-[3rem_1fr_auto] items-center gap-3" key={`${event.title}-${index}`}>
             <div className="rounded-md border border-border bg-surface px-2 py-1.5 text-center font-mono"><span className="block text-[9px] uppercase text-muted">{event.month}</span><strong className="text-sm text-zinc-200">{event.day}</strong></div>
-            <div><p className="text-xs font-medium text-zinc-200">{event.title}</p><p className="mt-0.5 text-[10px] text-muted">{event.scope}</p></div>
+            <p className="text-xs font-medium text-zinc-200">{event.title}</p>
             <span className={event.impact === "Alto" ? "badge badge-warning" : "badge badge-muted"}>{event.impact}</span>
           </li>
         ))}
