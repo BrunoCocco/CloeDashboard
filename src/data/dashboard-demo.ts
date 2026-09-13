@@ -3,7 +3,7 @@ import { classifyFearGreed, type FearGreedTone } from "@/lib/fear-greed";
 export type SummaryItem = { label: string; value: string; confidence: string; detail: string };
 export type MacroMetric = { name: string; value: string; delta: string | null; direction: "Sin datos" | "Mixto"; tone: FearGreedTone | null; source: { name: string; url: string | null } | null };
 export type AssetRow = { symbol: string; structure: string; wind: string; support: string; resistance: string; status: string };
-export type MarketEvent = { day: string; month: string; title: string; scope: string; impact: "Alto" | "Medio" };
+export type MarketEvent = { day: string; month: string; title: string; impact: "Alto" | "Medio" };
 
 const demoFearGreed = classifyFearGreed(69);
 
@@ -40,8 +40,8 @@ export const dashboardDemo = {
     symbol, structure: "Sin analizar", wind: "Sin cruce", support: "—", resistance: "—", status: "Pendiente",
   })) satisfies AssetRow[],
   events: [
-    { day: "—", month: "—", title: "Dato macro relevante", scope: "Fed · inflación · empleo", impact: "Alto" },
-    { day: "—", month: "—", title: "Evento de ecosistema", scope: "Confirmación oficial requerida", impact: "Medio" },
-    { day: "—", month: "—", title: "Seguimiento regulatorio", scope: "Rumor ≠ acontecimiento", impact: "Medio" },
+    { day: "—", month: "—", title: "Dato macro relevante", impact: "Alto" },
+    { day: "—", month: "—", title: "Evento de ecosistema", impact: "Medio" },
+    { day: "—", month: "—", title: "Seguimiento regulatorio", impact: "Medio" },
   ] satisfies MarketEvent[],
 };
