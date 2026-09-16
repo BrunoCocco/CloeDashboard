@@ -13,6 +13,7 @@ export type MacroMetric = {
   name: string;
   value: string;
   delta: string | null;
+  observedAt: string | null;
   direction: "Sube" | "Baja" | "Estable" | "Mixto" | "Sin datos";
   tone: FearGreedTone | null;
   source: { name: string; url: string | null } | null;
@@ -80,7 +81,7 @@ const macroDefinitions = [
   { key: "dxy", name: "DXY" },
   { key: "treasury_2y", name: "Treasury 2 años" },
   { key: "treasury_10y", name: "Treasury 10 años" },
-  { key: "stablecoin_supply", name: "Stablecoins" },
+  { key: "stablecoin_market_cap", name: "Stablecoins" },
   { key: "fear_greed", name: "Miedo y codicia" },
 ] as const;
 
@@ -164,6 +165,18 @@ function formatDate(value: string | null | undefined) {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Madrid",
+  }).format(date);
+}
+
+function formatObservationDate(value: string | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
     timeZone: "Europe/Madrid",
   }).format(date);
 }
@@ -316,6 +329,7 @@ export async function loadDashboard(userId: string) {
       name: fearGreedState?.label ?? definition.name,
       value: formatMacroValue(definition.key, observation?.value, observation?.unit),
       delta: dailyChange(definition.key, observation?.value, previous?.value),
+      observedAt: formatObservationDate(observation?.observed_at),
       direction: directionFromValues(observation?.value, previous?.value, fallbackDirection),
       tone: fearGreedState?.tone ?? null,
       source: observation
