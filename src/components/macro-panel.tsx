@@ -31,13 +31,16 @@ export function MacroPanel({ metrics }: { metrics: MacroMetric[] }) {
             <span className={`${metric.direction === "Sube" ? "text-emerald-300" : metric.direction === "Baja" ? "text-rose-300" : metric.direction === "Estable" ? "text-cyan-300" : metric.direction === "Mixto" ? "text-amber-300" : "text-zinc-500"} col-start-2 row-start-2 inline-grid size-9 place-items-center text-3xl font-black leading-none sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:self-center`} aria-label={`Dirección: ${metric.direction}`}>
               {metric.direction === "Sube" ? "↑" : metric.direction === "Baja" ? "↓" : metric.direction === "Estable" ? "→" : metric.direction === "Mixto" ? "◆" : "—"}
             </span>
-            {metric.source ? (
-              metric.source.url ? (
-                <a className="col-span-2 col-start-1 row-start-3 text-[10px] text-cyan-300/75 hover:text-cyan-300 hover:underline sm:col-span-1 sm:row-start-2" href={metric.source.url} rel="noreferrer" target="_blank">
-                  {metric.source.name}
-                </a>
-              ) : <span className="col-span-2 col-start-1 row-start-3 text-[10px] text-muted sm:col-span-1 sm:row-start-2">{metric.source.name}</span>
-            ) : null}
+            <div className="col-span-2 col-start-1 row-start-3 flex flex-wrap gap-x-2 text-[10px] sm:col-span-1 sm:row-start-2">
+              {metric.source ? (
+                metric.source.url ? (
+                  <a className="text-cyan-300/75 hover:text-cyan-300 hover:underline" href={metric.source.url} rel="noreferrer" target="_blank">
+                    {metric.source.name}
+                  </a>
+                ) : <span className="text-muted">{metric.source.name}</span>
+              ) : null}
+              {metric.observedAt ? <span className="text-zinc-500">Observación: {metric.observedAt}</span> : null}
+            </div>
           </div>
         ))}
       </div>

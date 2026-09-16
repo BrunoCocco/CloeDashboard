@@ -1,7 +1,7 @@
 import { classifyFearGreed, type FearGreedTone } from "@/lib/fear-greed";
 
 export type SummaryItem = { label: string; value: string; confidence: string; detail: string };
-export type MacroMetric = { name: string; value: string; delta: string | null; direction: "Sin datos" | "Mixto"; tone: FearGreedTone | null; source: { name: string; url: string | null } | null };
+export type MacroMetric = { name: string; value: string; delta: string | null; observedAt: string | null; direction: "Sin datos" | "Mixto"; tone: FearGreedTone | null; source: { name: string; url: string | null } | null };
 export type AssetRow = { symbol: string; structure: string; wind: string; support: string; resistance: string; status: string };
 export type MarketEvent = { day: string; month: string; title: string; impact: "Alto" | "Medio" };
 
@@ -28,13 +28,13 @@ export const dashboardDemo = {
     },
   ],
   macro: [
-    { name: "Liquidez neta de la Fed", value: "—", delta: null, direction: "Sin datos", tone: null, source: null },
-    { name: "Global M2", value: "—", delta: null, direction: "Sin datos", tone: null, source: null },
-    { name: "DXY", value: "—", delta: null, direction: "Sin datos", tone: null, source: null },
-    { name: "Treasury 2 años", value: "4,43%", delta: "Δ vs. anterior +0,04 pp", direction: "Mixto", tone: null, source: { name: "FRED DGS2", url: "https://fred.stlouisfed.org/series/DGS2" } },
-    { name: "Treasury 10 años", value: "4,83%", delta: "Δ vs. anterior +0,03 pp", direction: "Mixto", tone: null, source: { name: "FRED DGS10", url: "https://fred.stlouisfed.org/series/DGS10" } },
-    { name: "Stablecoins", value: "—", delta: null, direction: "Sin datos", tone: null, source: null },
-    { name: demoFearGreed.label, value: "69", delta: "Δ vs. anterior +3", direction: "Mixto", tone: demoFearGreed.tone, source: { name: "Alternative.me", url: "https://alternative.me/crypto/fear-and-greed-index/" } },
+    { name: "Liquidez neta de la Fed", value: "—", delta: null, observedAt: null, direction: "Sin datos", tone: null, source: null },
+    { name: "Global M2", value: "103.741 mil M USD", delta: null, observedAt: "14 sept 2026", direction: "Mixto", tone: null, source: { name: "StreetStats", url: "https://streetstats.finance/liquidity/money" } },
+    { name: "DXY", value: "—", delta: null, observedAt: null, direction: "Sin datos", tone: null, source: null },
+    { name: "Treasury 2 años", value: "4,43%", delta: "Δ vs. anterior +0,04 pp", observedAt: "11 sept 2026", direction: "Mixto", tone: null, source: { name: "FRED DGS2", url: "https://fred.stlouisfed.org/series/DGS2" } },
+    { name: "Treasury 10 años", value: "4,83%", delta: "Δ vs. anterior +0,03 pp", observedAt: "11 sept 2026", direction: "Mixto", tone: null, source: { name: "FRED DGS10", url: "https://fred.stlouisfed.org/series/DGS10" } },
+    { name: "Stablecoins", value: "304.363 mil M USD", delta: null, observedAt: "16 sept 2026", direction: "Mixto", tone: null, source: { name: "DefiLlama", url: "https://defillama.com/stablecoins" } },
+    { name: demoFearGreed.label, value: "69", delta: "Δ vs. anterior +3", observedAt: "16 sept 2026", direction: "Mixto", tone: demoFearGreed.tone, source: { name: "Alternative.me", url: "https://alternative.me/crypto/fear-and-greed-index/" } },
   ] satisfies MacroMetric[],
   assets: ["BTC", "SOL", "XRP", "HBAR", "XLM", "SHX", "VELO"].map((symbol) => ({
     symbol, structure: "Sin analizar", wind: "Sin cruce", support: "—", resistance: "—", status: "Pendiente",
