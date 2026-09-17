@@ -71,12 +71,12 @@ const TradingViewChart = memo(function TradingViewChart({ id, symbol, interval, 
 
 export const TradingViewCharts = memo(function TradingViewCharts() {
   return (
-    <section className="mt-6" aria-labelledby="charts-title">
-      <div className="mb-3 flex items-end justify-between gap-4">
+    <section className="tradingview-workspace" aria-labelledby="charts-title">
+      <div className="charts-header flex items-end justify-between gap-4">
         <div><p className="metric-label">Espacio de trabajo</p><h2 className="mt-1 text-lg font-semibold text-white" id="charts-title">Gráficos interactivos</h2></div>
         <span className="hidden text-xs text-muted sm:block">Dibujos e indicadores se conservan durante la sesión</span>
       </div>
-      <div className="grid gap-3">
+      <div className="charts-grid">
         <TradingViewChart id="tradingview_btc_monthly" interval="M" symbol="BINANCE:BTCUSD" title="Bitcoin · Mensual" />
         <TradingViewChart id="tradingview_btc_daily" interval="D" symbol="BINANCE:BTCUSD" title="Bitcoin · Diario" />
         <TradingViewChart id="tradingview_sol_monthly" interval="M" symbol="BINANCE:SOLUSD" title="Solana · Mensual" />
