@@ -7,6 +7,7 @@ import { TechnicalPanel } from "@/components/technical-panel";
 import { AssetRadar } from "@/components/asset-radar";
 import { MacroPanel } from "@/components/macro-panel";
 import { EventsPanel } from "@/components/events-panel";
+import { InterpretationPanel } from "@/components/interpretation-panel";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { TradingViewCharts } from "@/components/tradingview-charts";
 import { MarketStrip } from "@/components/market-strip";
@@ -77,9 +78,19 @@ export function DashboardWorkspace({ initialDashboard, initialMarket, initialPor
           </section>
           <TechnicalPanel assets={dashboard.technical} />
         </div> : null}
-        {activeTab === "radar" ? <AssetRadar assets={dashboard.assets} /> : null}
-        {activeTab === "macro" ? <MacroPanel metrics={dashboard.macro} /> : null}
-        {activeTab === "fechas" ? <EventsPanel events={dashboard.events} /> : null}
+        {activeTab === "radar" ? <div className="dashboard-radar-container"><AssetRadar assets={dashboard.assets} /></div> : null}
+        {activeTab === "macro" ? (
+          <div className="dashboard-insight-layout">
+            <MacroPanel metrics={dashboard.macro} />
+            <InterpretationPanel eyebrow="Síntesis diaria" title="Lectura de Cloe" text={dashboard.macroInterpretation} />
+          </div>
+        ) : null}
+        {activeTab === "fechas" ? (
+          <div className="dashboard-insight-layout">
+            <EventsPanel events={dashboard.events} />
+            <InterpretationPanel eyebrow="Síntesis diaria" title="Impacto de próximas fechas" text={dashboard.datesInterpretation} />
+          </div>
+        ) : null}
         {activeTab === "carteras" ? (
           <section className="portfolio-tab-grid grid content-start gap-3 md:grid-cols-2" aria-label="Carteras privadas">
             {initialPortfolios.portfolios.map((portfolio) => (
