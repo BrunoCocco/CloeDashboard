@@ -7,21 +7,23 @@ import { TechnicalPanel } from "@/components/technical-panel";
 import { AssetRadar } from "@/components/asset-radar";
 import { MacroPanel } from "@/components/macro-panel";
 import { EventsPanel } from "@/components/events-panel";
+import { PortfolioCard } from "@/components/portfolio-card";
 import { TradingViewCharts } from "@/components/tradingview-charts";
 import { MarketStrip } from "@/components/market-strip";
 import type { DashboardData } from "@/lib/dashboard";
 import type { MarketStripQuote } from "@/lib/market-prices";
+import type { PortfoliosPageData } from "@/lib/portfolios";
 
 const DASHBOARD_REFRESH_MS = 60 * 60 * 1_000;
 const MARKET_REFRESH_MS = 5 * 60 * 1_000;
-type Tab = "general" | "radar" | "macro" | "fechas";
+type Tab = "general" | "radar" | "macro" | "fechas" | "carteras";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "general", label: "General" }, { id: "radar", label: "Radar" },
-  { id: "macro", label: "Macro" }, { id: "fechas", label: "Fechas" },
+  { id: "macro", label: "Macro" }, { id: "fechas", label: "Fechas" }, { id: "carteras", label: "Carteras" },
 ];
 
-export function DashboardWorkspace({ initialDashboard, initialMarket }: { initialDashboard: DashboardData; initialMarket: { quotes: MarketStripQuote[]; updatedAt: string | null; stale: boolean } }) {
+export function DashboardWorkspace({ initialDashboard, initialMarket, initialPortfolios }: { initialDashboard: DashboardData; initialMarket: { quotes: MarketStripQuote[]; updatedAt: string | null; stale: boolean }; initialPortfolios: PortfoliosPageData }) {
   const [dashboard, setDashboard] = useState(initialDashboard);
   const [activeTab, setActiveTab] = useState<Tab>("general");
   const [dashboardStale, setDashboardStale] = useState(false);
@@ -68,7 +70,7 @@ export function DashboardWorkspace({ initialDashboard, initialMarket }: { initia
       <div className="mt-3 flex gap-1 overflow-x-auto rounded-xl border border-border bg-panel p-1" role="tablist" aria-label="Secciones del dashboard">
         {tabs.map((tab) => <button aria-controls={`panel-${tab.id}`} aria-selected={activeTab === tab.id} className={activeTab === tab.id ? "dashboard-tab dashboard-tab-active" : "dashboard-tab"} id={`tab-${tab.id}`} key={tab.id} onClick={() => setActiveTab(tab.id)} role="tab" type="button">{tab.label}</button>)}
       </div>
-      <div className="mt-3" id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
+      <div className={activeTab === "carteras" ? "dashboard-tab-panel dashboard-tab-panel-scroll" : "dashboard-tab-panel"} id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
         {activeTab === "general" ? <div className="grid gap-3">
           <section aria-label="Resumen del mercado" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {dashboard.summary.map((item, index) => { const Icon = [Activity, ShieldAlert][index] ?? Activity; return <MarketSummary icon={<Icon />} item={item} key={item.label} />; })}
@@ -78,6 +80,13 @@ export function DashboardWorkspace({ initialDashboard, initialMarket }: { initia
         {activeTab === "radar" ? <AssetRadar assets={dashboard.assets} /> : null}
         {activeTab === "macro" ? <MacroPanel metrics={dashboard.macro} /> : null}
         {activeTab === "fechas" ? <EventsPanel events={dashboard.events} /> : null}
+        {activeTab === "carteras" ? (
+          <section className="portfolio-tab-grid grid content-start gap-3 md:grid-cols-2" aria-label="Carteras privadas">
+            {initialPortfolios.portfolios.map((portfolio) => (
+              <PortfolioCard key={portfolio.id} operator={initialPortfolios.operator} portfolio={portfolio} />
+            ))}
+          </section>
+        ) : null}
       </div>
     </section>
     <TradingViewCharts />
