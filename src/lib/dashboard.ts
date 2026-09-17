@@ -356,3 +356,5 @@ export async function loadDashboard(userId: string) {
     lastUpdated: formatDate(latestUpdate) ?? "Sin actualizaciones",
   };
 }
+
+export type DashboardData = Awaited<ReturnType<typeof loadDashboard>>;

@@ -19,7 +19,61 @@ const coinIds: Record<string, string> = {
   XRP: "ripple",
   HBAR: "hedera-hashgraph",
   XLM: "stellar",
+  VELO: "velo",
+  SHX: "stronghold-token",
 };
+
+export const marketStripSymbols = ["BTC", "SOL", "XRP", "HBAR", "XLM", "VELO", "SHX"] as const;
+export type MarketStripSymbol = (typeof marketStripSymbols)[number];
+
+export type MarketStripQuote = {
+  symbol: MarketStripSymbol;
+  usd: number;
+  change24h: number | null;
+  change1y: number | null;
+  marketCap: number | null;
+};
+
+type CoinGeckoMarket = {
+  id?: string;
+  current_price?: number;
+  price_change_percentage_24h?: number;
+  price_change_percentage_1y_in_currency?: number;
+  market_cap?: number;
+};
+
+export async function loadMarketStrip(): Promise<{ quotes: MarketStripQuote[]; updatedAt: string }> {
+  const ids = marketStripSymbols.map((symbol) => coinIds[symbol]).join(",");
+  const params = new URLSearchParams({
+    vs_currency: "usd",
+    ids,
+    price_change_percentage: "1y",
+    precision: "full",
+  });
+  const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?${params}`, {
+    headers: { accept: "application/json" },
+    next: { revalidate: 300 },
+    signal: AbortSignal.timeout(6_000),
+  });
+
+  if (!response.ok) throw new Error(`CoinGecko respondió ${response.status}`);
+  const payload = (await response.json()) as CoinGeckoMarket[];
+  const byId = new Map(payload.map((quote) => [quote.id, quote]));
+  const quotes = marketStripSymbols.flatMap((symbol) => {
+    const quote = byId.get(coinIds[symbol]);
+    if (!quote || typeof quote.current_price !== "number") return [];
+    return [{
+      symbol,
+      usd: quote.current_price,
+      change24h: typeof quote.price_change_percentage_24h === "number" ? quote.price_change_percentage_24h : null,
+      change1y: typeof quote.price_change_percentage_1y_in_currency === "number" ? quote.price_change_percentage_1y_in_currency : null,
+      marketCap: typeof quote.market_cap === "number" ? quote.market_cap : null,
+    }];
+  });
+
+  if (quotes.length === 0) throw new Error("CoinGecko no devolvió cotizaciones válidas");
+  return { quotes, updatedAt: new Date().toISOString() };
+}
 
 export async function loadMarketQuotes(symbols: string[]) {
   const requested = [...new Set(symbols.map((symbol) => symbol.toUpperCase()))]
