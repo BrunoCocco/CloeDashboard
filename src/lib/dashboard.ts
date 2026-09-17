@@ -37,6 +37,30 @@ export type MarketEvent = {
 
 type JsonRecord = Record<string, unknown>;
 
+const interpretationKeys = [
+  "summary",
+  "reading",
+  "interpretation",
+  "impact",
+  "conclusion",
+  "analysis",
+  "assessment",
+  "outlook",
+  "text",
+  "message",
+] as const;
+
+const nonInterpretationKeys = new Set([
+  "title",
+  "name",
+  "date",
+  "scheduled_at",
+  "importance",
+  "status",
+  "source",
+  "url",
+]);
+
 const trackedSymbols = ["BTC", "SOL", "XRP", "HBAR", "XLM", "SHX", "VELO"];
 
 const regimeLabels: Record<string, string> = {
@@ -181,6 +205,56 @@ function formatObservationDate(value: string | null | undefined) {
   }).format(date);
 }
 
+function normalizePanelText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function compactPanelText(value: string) {
+  const normalized = normalizePanelText(value);
+  const maxLength = 680;
+  if (normalized.length <= maxLength) return normalized;
+
+  const boundary = normalized.lastIndexOf(" ", maxLength);
+  return `${normalized.slice(0, boundary > 0 ? boundary : maxLength).trimEnd()}…`;
+}
+
+/**
+ * Cloe guarda las síntesis con estructuras JSON que pueden evolucionar. Esta
+ * lectura prioriza los campos semánticos conocidos y solo recurre a texto
+ * genérico cuando no parece ser un dato de calendario ni un título de evento.
+ */
+function interpretationFrom(value: unknown, depth = 0): string | null {
+  if (depth > 4 || value === null || value === undefined) return null;
+
+  if (typeof value === "string") {
+    const text = compactPanelText(value);
+    return text || null;
+  }
+
+  if (Array.isArray(value)) {
+    const items = value
+      .map((item) => interpretationFrom(item, depth + 1))
+      .filter((item): item is string => Boolean(item));
+    return items.length > 0 ? compactPanelText(items.join(" ")) : null;
+  }
+
+  if (typeof value !== "object") return null;
+
+  const record = value as JsonRecord;
+  for (const key of interpretationKeys) {
+    const text = interpretationFrom(record[key], depth + 1);
+    if (text) return text;
+  }
+
+  for (const [key, candidate] of Object.entries(record)) {
+    if (nonInterpretationKeys.has(key.toLowerCase())) continue;
+    const text = interpretationFrom(candidate, depth + 1);
+    if (text) return text;
+  }
+
+  return null;
+}
+
 function numberFromRecord(value: unknown, key: string) {
   if (!value || typeof value !== "object") return null;
   const candidate = (value as JsonRecord)[key];
@@ -214,7 +288,7 @@ export async function loadDashboard(userId: string) {
     Promise.all(macroRequests),
     supabase.from("fundamental_analyses").select("as_of, regime, summary, confidence").eq("user_id", userId).order("as_of", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("market_events").select("scheduled_at, title, status, importance").eq("user_id", userId).in("status", ["announced", "confirmed"]).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
-    supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, information_cutoff").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, information_cutoff, fundamental_result, dates_result, conclusion").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
     loadMarketQuotes(["BTC", "SOL"]),
   ]);
 
@@ -338,6 +412,17 @@ export async function loadDashboard(userId: string) {
     };
   });
 
+  // Fundamental y Fechas se mantienen independientes: la conclusión global de
+  // Cloe se carga para conservar la síntesis completa, pero no se reutiliza en
+  // ninguno de los dos paneles modulares.
+  const macroInterpretation = interpretationFrom(synthesis?.fundamental_result)
+    ?? (typeof fundamental?.summary === "string" && normalizePanelText(fundamental.summary)
+      ? compactPanelText(fundamental.summary)
+      : null)
+    ?? "Información insuficiente: todavía no hay una interpretación fundamental consolidada para este corte.";
+  const datesInterpretation = interpretationFrom(synthesis?.dates_result)
+    ?? "Información insuficiente: hay fechas registradas, pero todavía no hay una interpretación de su posible impacto.";
+
   const updateCandidates = [
     synthesis?.information_cutoff,
     fundamental?.as_of,
@@ -350,8 +435,10 @@ export async function loadDashboard(userId: string) {
     summary,
     technical,
     macro,
+    macroInterpretation,
     assets: assetView,
     events: eventView,
+    datesInterpretation,
     hasData,
     lastUpdated: formatDate(latestUpdate) ?? "Sin actualizaciones",
   };
