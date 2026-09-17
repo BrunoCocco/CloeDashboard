@@ -23,9 +23,9 @@ export default async function Home() {
   const userEmail = typeof claims?.email === "string" ? claims.email : "Cuenta activa";
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1920px] flex-col px-4 py-4 sm:px-5 lg:px-8">
-        <header className="mb-2 grid items-center gap-4 border-b border-border/80 pb-4 md:grid-cols-[1fr_auto_1fr]">
+    <main className="dashboard-page bg-background text-foreground">
+      <div className="dashboard-shell">
+        <header className="dashboard-header grid items-center gap-4 border-b border-border/80 md:grid-cols-[1fr_auto_1fr]">
           <div className="flex items-center gap-3">
             <div className="grid h-11 min-w-16 place-items-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 font-mono text-xs font-black tracking-[0.14em] text-cyan-300">CLOE</div>
             <p className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300 sm:text-base">Market intelligence</p>
@@ -37,7 +37,7 @@ export default async function Home() {
           </div>
         </header>
         <DashboardWorkspace initialDashboard={dashboard} initialMarket={marketResult} />
-        <footer className="mt-4 grid items-center gap-3 border-t border-border pt-3 text-center font-mono text-[10px] uppercase tracking-wider text-muted sm:grid-cols-2">
+        <footer className="dashboard-footer grid items-center gap-3 border-t border-border text-center font-mono text-[10px] uppercase tracking-wider text-muted sm:grid-cols-2">
           <span className="sm:text-left">DISCIPLINA + CONSTANCIA = RESULTADOS</span>
           <span className="max-w-full truncate sm:text-right" title={userEmail}>{userEmail}</span>
         </footer>
