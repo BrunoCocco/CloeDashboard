@@ -35,9 +35,14 @@ body {
 .dashboard-page { min-height: 100svh; }
 .dashboard-shell { margin-inline: auto; display: flex; min-height: 100svh; width: 100%; max-width: 1920px; flex-direction: column; padding: 1rem; }
 .dashboard-header { margin-bottom: 0.5rem; padding-bottom: 1rem; }
+.dashboard-brand-mark { min-width: 3.2rem; height: 2.2rem; padding-inline: 0.65rem; font-size: 0.7rem; }
+.dashboard-brand-title { font-size: 0.85rem; }
+.dashboard-signout { padding: 0.5rem 0.75rem; font-size: 0.75rem; }
 .dashboard-footer { margin-top: 1rem; padding-top: 0.75rem; }
 .dashboard-workspace { display: contents; }
 .dashboard-content { margin-top: 1rem; }
+.dashboard-tab-panel { min-height: 0; }
+.dashboard-tab-panel-scroll { overflow: auto; overscroll-behavior: contain; scrollbar-color: #3f4a5d transparent; }
 .tradingview-workspace { margin-top: 1.5rem; }
 .charts-header { margin-bottom: 0.75rem; }
 .charts-grid { display: grid; gap: 0.75rem; }
@@ -199,20 +204,27 @@ body {
 
   .dashboard-page { height: 100svh; min-height: 0; overflow: hidden; }
   .dashboard-shell { height: 100svh; min-height: 0; max-width: none; padding: 0; overflow: hidden; }
-  .dashboard-header { min-height: 4.5rem; margin: 0; padding: 0.55rem 1rem; }
+  .dashboard-header { min-height: 3rem; margin: 0; padding: 0.3rem 1rem; }
+  .dashboard-brand { gap: 0.5rem; }
+  .dashboard-brand-mark { min-width: 2.15rem; height: 1.55rem; border-radius: 0.45rem; padding-inline: 0.35rem; font-size: 0.5rem; }
+  .dashboard-brand-title { font-size: 0.65rem; letter-spacing: 0.13em; }
+  .dashboard-signout { border-radius: 0.45rem; padding: 0.3rem 0.55rem; font-size: 0.65rem; }
   .dashboard-footer { min-height: 1.75rem; margin: 0; padding: 0.3rem 1rem; }
-  .dashboard-workspace { display: grid; min-height: 0; flex: 1; grid-template-rows: minmax(0, 1fr) 54svh auto; overflow: hidden; }
-  .dashboard-content { min-height: 0; margin: 0; overflow: hidden; padding: 0.55rem 1rem; }
+  .dashboard-workspace { display: grid; min-height: 0; flex: 1; grid-template-rows: minmax(0, 1fr) 58svh auto; overflow: hidden; }
+  .dashboard-content { display: flex; min-height: 0; flex-direction: column; margin: 0; overflow: hidden; padding: 0.35rem 1rem 0.15rem; }
 
   .dashboard-content > div:first-of-type { min-height: 1rem; justify-content: flex-end; }
-  .dashboard-content [role="tabpanel"] { margin-top: 0.45rem; }
+  .dashboard-content [role="tablist"] { margin-top: 0.3rem; }
+  .dashboard-content [role="tabpanel"] { display: flex; min-height: 0; flex: 1; margin-top: 0.3rem; overflow: hidden; }
+  .dashboard-content .dashboard-tab-panel-scroll { display: block; overflow: auto; }
   .dashboard-content .panel { box-shadow: none; }
   .dashboard-content .dashboard-tab { padding-block: 0.45rem; }
   .dashboard-content [aria-label="Riesgo técnico de Bitcoin y Solana"] { gap: 0.5rem; }
+  .portfolio-tab-grid { padding-right: 0.2rem; }
 
   .tradingview-workspace { min-height: 0; margin: 0; width: 100%; overflow: hidden; }
   .charts-header { display: none; }
-  .charts-grid { height: 54svh; width: 100%; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 0; }
+  .charts-grid { height: 58svh; width: 100%; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 0; }
   .chart-panel { height: auto; min-height: 0; width: 100%; border: 0; border-radius: 0; }
   .chart-panel + .chart-panel { border-top: 1px solid #2a2e39; }
   .chart-heading { top: 0.25rem; padding: 0.18rem 0.5rem; }
