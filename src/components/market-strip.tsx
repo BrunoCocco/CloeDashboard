@@ -17,8 +17,8 @@ function Change({ label, value }: { label: string; value: number | null }) {
 
 export function MarketStrip({ quotes, updatedAt, stale, loading }: { quotes: MarketStripQuote[]; updatedAt: string | null; stale: boolean; loading: boolean }) {
   return (
-    <section className="mt-6 border-t border-border pt-4" aria-labelledby="market-strip-title">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+    <section className="market-strip-section border-t border-border" aria-labelledby="market-strip-title">
+      <div className="market-strip-header flex flex-wrap items-end justify-between gap-2">
         <div><p className="metric-label">Precios Alt</p><h2 className="mt-1 text-base font-semibold text-white" id="market-strip-title">Mercado seguido</h2></div>
         <p className={stale ? "text-xs text-amber-300" : "text-xs text-muted"} aria-live="polite">
           {loading ? "Actualizando…" : stale ? "Sin conexión · mostrando último dato válido" : updatedAt ? `Actualizado ${new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" }).format(new Date(updatedAt))}` : "Esperando cotizaciones"}
