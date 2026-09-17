@@ -59,9 +59,8 @@ export function DashboardWorkspace({ initialDashboard, initialMarket }: { initia
   }, [refreshMarket]);
 
   return <div className="dashboard-workspace">
-    <section className="dashboard-content" aria-labelledby="dashboard-title">
+    <section className="dashboard-content" aria-label="Panel de mercado de Cloe">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><p className="metric-label">Lectura Cloe</p><h2 className="mt-1 text-lg font-semibold text-white" id="dashboard-title">Panel de mercado</h2></div>
         <p className={dashboardStale ? "text-xs text-amber-300" : "text-xs text-muted"} aria-live="polite">
           {dashboardStale ? "Actualización fallida · se conserva el último dato válido" : `Actualización automática cada hora · corte ${dashboard.lastUpdated}`}
         </p>
