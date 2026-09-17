@@ -58,8 +58,8 @@ export function DashboardWorkspace({ initialDashboard, initialMarket }: { initia
     return () => window.clearInterval(interval);
   }, [refreshMarket]);
 
-  return <>
-    <section className="mt-4" aria-labelledby="dashboard-title">
+  return <div className="dashboard-workspace">
+    <section className="dashboard-content" aria-labelledby="dashboard-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div><p className="metric-label">Lectura Cloe</p><h2 className="mt-1 text-lg font-semibold text-white" id="dashboard-title">Panel de mercado</h2></div>
         <p className={dashboardStale ? "text-xs text-amber-300" : "text-xs text-muted"} aria-live="polite">
@@ -83,5 +83,5 @@ export function DashboardWorkspace({ initialDashboard, initialMarket }: { initia
     </section>
     <TradingViewCharts />
     <MarketStrip loading={marketLoading} quotes={market.quotes} stale={marketStale} updatedAt={market.updatedAt} />
-  </>;
+  </div>;
 }
