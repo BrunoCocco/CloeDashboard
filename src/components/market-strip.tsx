@@ -4,7 +4,6 @@ import type { MarketStripQuote } from "@/lib/market-prices";
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat("es-ES", {
-    style: "currency", currency: "USD",
     minimumFractionDigits: value < 1 ? 4 : 2,
     maximumFractionDigits: value < 1 ? 6 : 2,
   }).format(value);
@@ -12,7 +11,9 @@ function formatPrice(value: number) {
 
 function Change({ label, value }: { label: string; value: number | null }) {
   const className = value === null ? "text-zinc-500" : value >= 0 ? "text-emerald-300" : "text-rose-300";
-  return <span className={className}>{label} {value === null ? "—" : `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`}</span>;
+  const period = label === "24H" ? "Variación diaria" : "Variación anual";
+  const text = value === null ? "—" : `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+  return <span aria-label={value === null ? `${period}: no disponible` : `${period}: ${text}`} className={className} title={period}>{text}</span>;
 }
 
 export function MarketStrip({ quotes, updatedAt, stale, loading }: { quotes: MarketStripQuote[]; updatedAt: string | null; stale: boolean; loading: boolean }) {
