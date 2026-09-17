@@ -201,17 +201,18 @@ body {
   .dashboard-shell { height: 100svh; min-height: 0; max-width: none; padding: 0; overflow: hidden; }
   .dashboard-header { min-height: 4.5rem; margin: 0; padding: 0.55rem 1rem; }
   .dashboard-footer { min-height: 1.75rem; margin: 0; padding: 0.3rem 1rem; }
-  .dashboard-workspace { display: grid; min-height: 0; flex: 1; grid-template-rows: minmax(0, 1fr) 50svh auto; overflow: hidden; }
+  .dashboard-workspace { display: grid; min-height: 0; flex: 1; grid-template-rows: minmax(0, 1fr) 54svh auto; overflow: hidden; }
   .dashboard-content { min-height: 0; margin: 0; overflow: hidden; padding: 0.55rem 1rem; }
 
-  .dashboard-content > div:first-of-type { margin-top: 0.4rem; }
+  .dashboard-content > div:first-of-type { min-height: 1rem; justify-content: flex-end; }
   .dashboard-content [role="tabpanel"] { margin-top: 0.45rem; }
   .dashboard-content .panel { box-shadow: none; }
   .dashboard-content .dashboard-tab { padding-block: 0.45rem; }
+  .dashboard-content [aria-label="Riesgo técnico de Bitcoin y Solana"] { gap: 0.5rem; }
 
   .tradingview-workspace { min-height: 0; margin: 0; width: 100%; overflow: hidden; }
   .charts-header { display: none; }
-  .charts-grid { height: 50svh; width: 100%; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 0; }
+  .charts-grid { height: 54svh; width: 100%; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 0; }
   .chart-panel { height: auto; min-height: 0; width: 100%; border: 0; border-radius: 0; }
   .chart-panel + .chart-panel { border-top: 1px solid #2a2e39; }
   .chart-heading { top: 0.25rem; padding: 0.18rem 0.5rem; }
