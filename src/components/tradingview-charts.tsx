@@ -63,7 +63,6 @@ const TradingViewChart = memo(function TradingViewChart({ id, symbol, interval, 
 
   return (
     <section className="chart-panel" aria-label={title} data-chart-id={id}>
-      <div className="chart-heading"><span>{title}</span><span>{symbol.replace("BINANCE:", "")}</span></div>
       {failed ? <p className="grid h-full place-items-center text-sm text-rose-300">No se pudo cargar TradingView.</p> : <div className="h-full min-h-0 w-full" id={id} ref={containerRef} />}
     </section>
   );
