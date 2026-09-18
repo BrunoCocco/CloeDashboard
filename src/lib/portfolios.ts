@@ -1,4 +1,5 @@
 import { loadMarketQuotes } from "@/lib/market-prices";
+import { formatMoney } from "@/lib/portfolio-format";
 import { createClient } from "@/lib/supabase/server";
 
 export type PortfolioPosition = {
@@ -44,15 +45,6 @@ function formatOperatorAction(value: string | null | undefined) {
   if (normalized.includes("watch") || normalized.includes("monitor")) return "EN VIGILANCIA";
   if (normalized.includes("wait")) return "EN ESPERA";
   return "ESTADO EN REVISIÓN";
-}
-
-function formatMoney(value: number | null, currency: string) {
-  if (value === null) return "Sin cotización";
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(value);
 }
 
 function formatQuantity(value: number) {
@@ -149,5 +141,3 @@ export async function loadPortfolios(userId: string) {
     },
   } satisfies PortfoliosPageData;
 }
-
-export { formatMoney };

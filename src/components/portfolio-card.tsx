@@ -1,5 +1,5 @@
 import type { OperatorStatus, PortfolioView } from "@/lib/portfolios";
-import { formatMoney } from "@/lib/portfolios";
+import { formatMoney } from "@/lib/portfolio-format";
 
 function formatPct(value: number | null) {
   if (value === null) return "—";
