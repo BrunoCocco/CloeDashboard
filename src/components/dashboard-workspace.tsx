@@ -63,11 +63,6 @@ export function DashboardWorkspace({ initialDashboard, initialMarket, initialPor
 
   return <div className="dashboard-workspace">
     <section className="dashboard-content" aria-label="Panel de mercado de Cloe">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <p className={dashboardStale ? "text-xs text-amber-300" : "text-xs text-muted"} aria-live="polite">
-          {dashboardStale ? "Actualización fallida · se conserva el último dato válido" : `Actualización automática cada hora · corte ${dashboard.lastUpdated}`}
-        </p>
-      </div>
       <div className="mt-3 flex gap-1 overflow-x-auto rounded-xl border border-border bg-panel p-1" role="tablist" aria-label="Secciones del dashboard">
         {tabs.map((tab) => <button aria-controls={`panel-${tab.id}`} aria-selected={activeTab === tab.id} className={activeTab === tab.id ? "dashboard-tab dashboard-tab-active" : "dashboard-tab"} id={`tab-${tab.id}`} key={tab.id} onClick={() => setActiveTab(tab.id)} role="tab" type="button">{tab.label}</button>)}
       </div>
@@ -99,6 +94,9 @@ export function DashboardWorkspace({ initialDashboard, initialMarket, initialPor
           </section>
         ) : null}
       </div>
+      <p className={`dashboard-update-status ${dashboardStale ? "text-amber-300" : "text-muted"}`} aria-live="polite">
+        {dashboardStale ? "Actualización fallida · se conserva el último dato válido" : `Actualización automática cada hora · corte ${dashboard.lastUpdated}`}
+      </p>
     </section>
     <TradingViewCharts />
     <MarketStrip loading={marketLoading} quotes={market.quotes} stale={marketStale} updatedAt={market.updatedAt} />
