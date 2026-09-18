@@ -77,7 +77,6 @@ export const TradingViewCharts = memo(function TradingViewCharts() {
       </div>
       <div className="charts-grid">
         <TradingViewChart id="tradingview_btc_monthly" interval="M" symbol="BINANCE:BTCUSD" title="Bitcoin · Mensual" />
-        <TradingViewChart id="tradingview_btc_daily" interval="D" symbol="BINANCE:BTCUSD" title="Bitcoin · Diario" />
         <TradingViewChart id="tradingview_sol_monthly" interval="M" symbol="BINANCE:SOLUSD" title="Solana · Mensual" />
       </div>
     </section>
