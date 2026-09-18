@@ -232,7 +232,7 @@ body {
 
   .tradingview-workspace { min-height: 0; margin: 0; width: 100%; overflow: hidden; }
   .charts-header { display: none; }
-  .charts-grid { height: 58svh; width: 100%; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 0; }
+  .charts-grid { height: 58svh; width: 100%; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 0; }
   .chart-panel { height: auto; min-height: 0; width: 100%; border: 0; border-radius: 0; }
   .chart-panel + .chart-panel { border-top: 1px solid #2a2e39; }
   .market-strip-section { margin: 0; padding: 0.45rem 1rem 0.4rem; }
