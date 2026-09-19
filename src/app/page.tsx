@@ -30,9 +30,14 @@ export default async function Home() {
             <div className="grid h-11 min-w-16 place-items-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 font-mono text-xs font-black tracking-[0.14em] text-cyan-300">
               CLOE
             </div>
-            <p className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300 sm:text-base">
-              Market intelligence
-            </p>
+            <div className="flex h-11 flex-col justify-center">
+              <p className="font-mono text-sm font-semibold uppercase leading-none tracking-[0.18em] text-cyan-300 sm:text-base">
+                Market intelligence
+              </p>
+              <p className="mt-1 font-mono text-[9px] uppercase leading-none tracking-[0.12em] text-muted sm:text-[10px]">
+                Disciplina + constancia = resultados
+              </p>
+            </div>
           </div>
 
           <div className="order-first text-center md:order-none">
@@ -141,7 +146,7 @@ export default async function Home() {
         </section>
 
         <footer className="mt-3 grid items-center gap-3 border-t border-border pt-3 text-center font-mono text-[10px] uppercase tracking-wider text-muted sm:grid-cols-2 xl:grid-cols-[1fr_auto_1fr] xl:text-left">
-          <span>DICIPLINA + CONSTANCIA = RESULTADOS</span>
+          <span>DISCIPLINA + CONSTANCIA = RESULTADOS</span>
           <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-end xl:justify-center">
             <span className="max-w-48 truncate" title={userEmail}>{userEmail}</span>
             <span className="inline-flex items-center gap-2">
