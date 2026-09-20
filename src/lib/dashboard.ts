@@ -35,6 +35,22 @@ export type MarketEvent = {
   impact: "Alto" | "Medio" | "Bajo";
 };
 
+export type AnalystModule = {
+  key: "fundamental" | "dates" | "technical" | "derivatives";
+  label: string;
+  summary: string | null;
+  signal: string | null;
+  available: boolean;
+};
+
+export type AnalystSynthesis = {
+  conclusion: string | null;
+  agreements: string[];
+  contradictions: string[];
+  modules: AnalystModule[];
+  hasContent: boolean;
+};
+
 type JsonRecord = Record<string, unknown>;
 
 const trackedSymbols = ["BTC", "SOL", "XRP", "HBAR", "XLM", "SHX", "VELO"];
@@ -196,6 +212,50 @@ function formatUsd(value: number | null) {
   }).format(value);
 }
 
+function readableText(value: unknown, keys: string[]) {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as JsonRecord;
+  for (const key of keys) {
+    const candidate = record[key];
+    if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
+  }
+  return null;
+}
+
+function readableList(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item === "string" && item.trim()) return [item.trim()];
+    const text = readableText(item, ["summary", "detail", "analysis", "conclusion", "text"]);
+    return text ? [text] : [];
+  });
+}
+
+function nestedResult(value: unknown, key: string) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as JsonRecord;
+  const direct = record[key];
+  if (direct && typeof direct === "object" && !Array.isArray(direct)) return direct;
+  const modules = record.modules;
+  if (modules && typeof modules === "object" && !Array.isArray(modules)) {
+    const nested = (modules as JsonRecord)[key];
+    if (nested && typeof nested === "object" && !Array.isArray(nested)) return nested;
+  }
+  return null;
+}
+
+function analystModule(
+  key: AnalystModule["key"],
+  label: string,
+  result: unknown,
+  fallback: string | null = null,
+): AnalystModule {
+  const summary = readableText(result, ["summary", "analysis", "conclusion", "detail", "reading"]) ?? fallback;
+  const signal = readableText(result, ["signal", "bias", "risk", "regime", "status"]);
+  return { key, label, summary, signal, available: Boolean(summary || signal) };
+}
+
 export async function loadDashboard(userId: string) {
   const supabase = await createClient();
   const macroRequests = macroDefinitions.map((definition) =>
@@ -212,9 +272,9 @@ export async function loadDashboard(userId: string) {
     supabase.from("assets").select("id, symbol, name, is_active").eq("user_id", userId).eq("is_active", true),
     supabase.from("technical_analyses").select("asset_id, timeframe, as_of, bias, structure, volume_reading, support_levels, resistance_levels, confirmation, source_snapshot").eq("user_id", userId).order("as_of", { ascending: false }).limit(100),
     Promise.all(macroRequests),
-    supabase.from("fundamental_analyses").select("as_of, regime, summary, confidence").eq("user_id", userId).order("as_of", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("fundamental_analyses").select("as_of, regime, summary, confidence, evidence, risks, opportunities").eq("user_id", userId).order("as_of", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("market_events").select("scheduled_at, title, status, importance").eq("user_id", userId).in("status", ["announced", "confirmed"]).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
-    supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, information_cutoff").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, information_cutoff, conclusion, agreements, contradictions, technical_result, fundamental_result, dates_result").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
     loadMarketQuotes(["BTC", "SOL"]),
   ]);
 
@@ -277,6 +337,28 @@ export async function loadDashboard(userId: string) {
       detail: riskDetails[synthesis?.risk_level ?? "unknown"] ?? riskDetails.unknown,
     },
   ];
+
+  const derivativesResult = nestedResult(synthesis?.fundamental_result, "derivatives")
+    ?? nestedResult(synthesis?.technical_result, "derivatives");
+  const evidenceFallback = readableList(fundamental?.evidence)[0] ?? null;
+  const analysisModules: AnalystModule[] = [
+    analystModule("fundamental", "Fundamental", synthesis?.fundamental_result, fundamental?.summary ?? evidenceFallback),
+    analystModule("dates", "Fechas", synthesis?.dates_result),
+    analystModule("technical", "Técnico", synthesis?.technical_result),
+    analystModule("derivatives", "Derivados y posicionamiento", derivativesResult),
+  ];
+  const agreements = readableList(synthesis?.agreements);
+  const contradictions = readableList(synthesis?.contradictions);
+  const conclusion = typeof synthesis?.conclusion === "string" && synthesis.conclusion.trim()
+    ? synthesis.conclusion.trim()
+    : null;
+  const analyst: AnalystSynthesis = {
+    conclusion,
+    agreements,
+    contradictions,
+    modules: analysisModules,
+    hasContent: Boolean(conclusion || agreements.length || contradictions.length || analysisModules.some((module) => module.available)),
+  };
 
   const technical = ["BTC", "SOL"].map((symbol) => {
     const analysis = latestTechnical.get(symbol);
@@ -348,6 +430,7 @@ export async function loadDashboard(userId: string) {
 
   return {
     summary,
+    analyst,
     technical,
     macro,
     assets: assetView,
