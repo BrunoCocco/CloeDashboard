@@ -32,7 +32,7 @@ export default async function Home() {
             </div>
             <div className="flex h-11 flex-col justify-center">
               <p className="font-mono text-sm font-semibold uppercase leading-none tracking-[0.18em] text-cyan-300 sm:text-base">
-                Analista de mercados
+                Cloe Analista
               </p>
               <p className="mt-1 font-mono text-[9px] uppercase leading-none tracking-[0.12em] text-muted sm:text-[10px]">
                 Disciplina + constancia = resultados
