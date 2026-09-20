@@ -1,9 +1,9 @@
-import Link from "next/link";
-import { Activity, ShieldAlert, TrendDown, TrendUp, Wallet } from "@/components/icons";
+import { Activity, ShieldAlert, TrendDown, TrendUp } from "@/components/icons";
 import { MarketSummary } from "@/components/market-summary";
 import { MacroPanel } from "@/components/macro-panel";
 import { AssetRadar } from "@/components/asset-radar";
 import { EventsPanel } from "@/components/events-panel";
+import { AnalystSynthesisPanel } from "@/components/analyst-synthesis";
 import { signOut } from "@/app/actions";
 import { loadDashboard } from "@/lib/dashboard";
 import { createClient } from "@/lib/supabase/server";
@@ -32,7 +32,7 @@ export default async function Home() {
             </div>
             <div className="flex h-11 flex-col justify-center">
               <p className="font-mono text-sm font-semibold uppercase leading-none tracking-[0.18em] text-cyan-300 sm:text-base">
-                Market intelligence
+                Analista de mercados
               </p>
               <p className="mt-1 font-mono text-[9px] uppercase leading-none tracking-[0.12em] text-muted sm:text-[10px]">
                 Disciplina + constancia = resultados
@@ -46,9 +46,6 @@ export default async function Home() {
           </div>
 
           <div className="flex items-center justify-end gap-2">
-            <Link className="button-secondary inline-flex items-center gap-2" href="/carteras">
-              <Wallet /> Carteras
-            </Link>
             <form action={signOut}>
               <button className="button-danger" type="submit">Salir</button>
             </form>
@@ -68,6 +65,10 @@ export default async function Home() {
             );
           })}
         </section>
+
+        <div className="mt-3">
+          <AnalystSynthesisPanel analysis={dashboard.analyst} />
+        </div>
 
         <section className="mt-3 grid flex-1 grid-cols-1 gap-3 xl:grid-cols-12">
           <div className="grid content-start gap-3 xl:col-span-8">
@@ -146,7 +147,7 @@ export default async function Home() {
         </section>
 
         <footer className="mt-3 grid items-center gap-3 border-t border-border pt-3 text-center font-mono text-[10px] uppercase tracking-wider text-muted sm:grid-cols-2 xl:grid-cols-[1fr_auto_1fr] xl:text-left">
-          <span>DISCIPLINA + CONSTANCIA = RESULTADOS</span>
+          <span>DICIPLINA + CONSTANCIA = RESULTADOS</span>
           <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-end xl:justify-center">
             <span className="max-w-48 truncate" title={userEmail}>{userEmail}</span>
             <span className="inline-flex items-center gap-2">
