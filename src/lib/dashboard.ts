@@ -258,6 +258,8 @@ function analystModule(
 
 export async function loadDashboard(userId: string) {
   const supabase = await createClient();
+  const now = Date.now();
+  const upcomingFrom = new Date(now).toISOString();
   const macroRequests = macroDefinitions.map((definition) =>
     supabase
       .from("macro_observations")
@@ -273,7 +275,7 @@ export async function loadDashboard(userId: string) {
     supabase.from("technical_analyses").select("asset_id, timeframe, as_of, bias, structure, volume_reading, support_levels, resistance_levels, confirmation, source_snapshot").eq("user_id", userId).order("as_of", { ascending: false }).limit(100),
     Promise.all(macroRequests),
     supabase.from("fundamental_analyses").select("as_of, regime, summary, confidence, evidence, risks, opportunities").eq("user_id", userId).order("as_of", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("market_events").select("scheduled_at, title, status, importance").eq("user_id", userId).in("status", ["announced", "confirmed"]).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
+    supabase.from("market_events").select("scheduled_at, title, status, importance").eq("user_id", userId).in("status", ["announced", "confirmed"]).or(`scheduled_at.gte.${upcomingFrom},scheduled_at.is.null`).order("scheduled_at", { ascending: true, nullsFirst: false }).limit(12),
     supabase.from("daily_syntheses").select("analysis_date, general_regime, risk_level, information_cutoff, conclusion, agreements, contradictions, technical_result, fundamental_result, dates_result").eq("user_id", userId).order("analysis_date", { ascending: false }).limit(1).maybeSingle(),
     loadMarketQuotes(["BTC", "SOL"]),
   ]);
@@ -304,7 +306,6 @@ export async function loadDashboard(userId: string) {
     macroHistory.set(observation.metric_key, history);
   });
 
-  const now = Date.now();
   const upcomingEvents = eventRows.filter((event) => {
     if (!event.scheduled_at) return true;
     return new Date(event.scheduled_at).getTime() >= now;
