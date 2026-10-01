@@ -25,26 +25,9 @@ export type PortfolioView = {
   returnPct: number | null;
 };
 
-export type OperatorStatus = {
-  label: string;
-  analysisDate: string | null;
-};
-
 export type PortfoliosPageData = {
   portfolios: PortfolioView[];
-  operator: OperatorStatus;
 };
-
-function formatOperatorAction(value: string | null | undefined) {
-  if (!value) return "SIN REGISTRO";
-
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "no_operation") return "SIN OPERACIÓN";
-  if (normalized.includes("long") || normalized.includes("buy")) return "POSIBLE LARGO";
-  if (normalized.includes("watch") || normalized.includes("monitor")) return "EN VIGILANCIA";
-  if (normalized.includes("wait")) return "EN ESPERA";
-  return "ESTADO EN REVISIÓN";
-}
 
 function formatMoney(value: number | null, currency: string) {
   if (value === null) return "Sin cotización";
@@ -61,7 +44,7 @@ function formatQuantity(value: number) {
 
 export async function loadPortfolios(userId: string) {
   const supabase = await createClient();
-  const [accountsResult, positionsResult, operatorResult] = await Promise.all([
+  const [accountsResult, positionsResult] = await Promise.all([
     supabase
       .from("portfolio_accounts")
       .select("id, name, account_type, mode, base_currency, is_active")
@@ -74,16 +57,9 @@ export async function loadPortfolios(userId: string) {
       .eq("user_id", userId)
       .eq("status", "open")
       .order("symbol"),
-    supabase
-      .from("daily_syntheses")
-      .select("analysis_date, operator_action")
-      .eq("user_id", userId)
-      .order("analysis_date", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
   ]);
 
-  const failed = [accountsResult, positionsResult, operatorResult].find((result) => result.error);
+  const failed = [accountsResult, positionsResult].find((result) => result.error);
   if (failed?.error) throw new Error(failed.error.message);
 
   const accounts = accountsResult.data ?? [];
@@ -143,10 +119,6 @@ export async function loadPortfolios(userId: string) {
 
   return {
     portfolios,
-    operator: {
-      label: formatOperatorAction(operatorResult.data?.operator_action),
-      analysisDate: operatorResult.data?.analysis_date ?? null,
-    },
   } satisfies PortfoliosPageData;
 }
 

@@ -13,3 +13,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 Cuando Bruno solicite cambios de Cloe Dashboard, el agente coordinador debe usar `.codex/skills/cloe-it`, preparar un handoff autocontenido y delegar la implementación al responsable IT. El coordinador revisa la evidencia antes de autorizar producción.
 
 Bruno autoriza de forma permanente la publicación en producción de los cambios que haya solicitado explícitamente una vez cumplidos los criterios del handoff. El coordinador puede transmitir esa confirmación a IT sin volver a preguntarle. Esta autorización no incluye las excepciones destructivas, financieras, de secretos, seguridad, identidad o ampliación de alcance definidas por la skill.
+
+
+## Actualización de datos CLOE
+
+Antes de cada carga al dashboard, leer y cumplir [docs/CLOE_UPDATE_PROTOCOL.md](docs/CLOE_UPDATE_PROTOCOL.md). La carga termina únicamente tras verificar la consulta y visualización de los módulos. CLOE es analista: no recrear decisiones automáticas ni simulaciones operativas retiradas.
