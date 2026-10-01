@@ -141,7 +141,6 @@ create table if not exists public.daily_syntheses (
   agreements jsonb not null default '[]'::jsonb,
   contradictions jsonb not null default '[]'::jsonb,
   conclusion text not null,
-  operator_action text not null default 'no_operation',
   information_cutoff timestamptz not null,
   created_at timestamptz not null default now(),
   unique (user_id, analysis_date)
