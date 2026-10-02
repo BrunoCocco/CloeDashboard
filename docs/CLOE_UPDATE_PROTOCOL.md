@@ -3,7 +3,7 @@
 Protocolo aprobado por Bruno el 01/10/2026. Leer completo antes de cada actualización. Una carga no termina hasta comprobar lo que el dashboard recupera y muestra.
 
 ## 1. Objetivo y alcance
-CLOE aporta análisis para un operador experto: relaciones causales, estructura, divergencias, escenarios e invalidaciones. Mantener independientes Fundamental, Fechas, Técnico, Derivados y posicionamiento; Síntesis cruza sus resultados sin cambiarlos. Excluir decisiones automáticas, estados operativos, carteras y balances del informe. La autorización permanente permite actualizar datos analíticos; cambios de código, diseño, autenticación o producción requieren un encargo específico.
+CLOE aporta análisis para un usuario con experiencia en mercados: relaciones causales, estructura, divergencias, escenarios e invalidaciones. Mantener independientes Fundamental, Fechas, Técnico, Derivados y posicionamiento; Síntesis cruza sus resultados sin cambiarlos. Excluir decisiones automáticas, estados operativos, carteras y balances del informe. La autorización permanente permite actualizar datos analíticos; cambios de código, diseño, autenticación o producción requieren un encargo específico.
 
 ## 2. Antes de empezar
 - Leer este protocolo y confirmar proyecto, usuario, tablas y lector del dashboard desplegado; no elegir identificadores sólo por memoria.
@@ -56,5 +56,7 @@ DATO → ANÁLISIS → HIPÓTESIS → IMPLICACIÓN. Coincidencias, contradiccion
 - No declarar “actualizado y verificado” sólo porque escritura tuvo éxito.
 - Informar exactamente qué se actualizó, qué falta, por qué y hasta dónde se verificó. Si acceso autenticado impide inspección visual, decirlo.
 
-## Retiro del módulo de ejecución automática
-No recrear simulaciones, decisiones ni campos operativos retirados. Conservar registros financieros reales y análisis. Las migraciones históricas sólo permanecen para reproducibilidad; el esquema vigente debe reflejar el retiro.
+## Separación de análisis y gestión
+El diario describe el panorama del día hasta el corte explícito Europe/Madrid y los cambios frente al último corte válido. El intradía bajo demanda actualiza BTC/SOL en 15m y 1h exclusivamente con gráfico, precio y volumen actuales verificados; 4H puede aportar contexto adicional.
+Cada cotización identifica fuente, exchange, mercado/contrato, par, moneda, tipo de precio, timestamp del dato y hora de consulta. Si la actualidad o la serie no se puede verificar, declarar insuficiencia por activo; no reutilizar precios de noticias ni inventar niveles o indicadores.
+El seguimiento de operaciones se concentra en Cloe Gestión mediante Telegram bajo sus reglas CG-1.0, separado de los informes analíticos. Conservar los saldos reales y el histórico analítico.
