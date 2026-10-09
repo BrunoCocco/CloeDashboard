@@ -6,6 +6,8 @@ Protocolo aprobado por Bruno el 01/10/2026. Leer completo antes de cada actualiz
 CLOE aporta análisis para un usuario con experiencia en mercados: relaciones causales, estructura, divergencias, escenarios e invalidaciones. Mantener independientes Fundamental, Fechas, Técnico, Derivados y posicionamiento; Síntesis cruza sus resultados sin cambiarlos. Excluir decisiones automáticas, estados operativos, carteras y balances del informe. La autorización permanente permite actualizar datos analíticos; cambios de código, diseño, autenticación o producción requieren un encargo específico.
 
 ## 2. Antes de empezar
+- `list_projects` puede omitir un proyecto accesible: no prueba ausencia ni desconexión. Para CloeDashboard, confirmar la referencia `wvwxwutjdqsktnrcdbkf` mediante `get_project` y una consulta de lectura `execute_sql` antes de declarar falta de acceso. No elegir FuturosLab por ser el único proyecto listado.
+- Cada carga fallida debe quedar como incidencia explícita. En la siguiente ejecución recuperar el último corte real y completar únicamente el backlog trazable; distinguir restauración retrospectiva de publicación original.
 - Leer este protocolo y confirmar proyecto, usuario, tablas y lector del dashboard desplegado; no elegir identificadores sólo por memoria.
 - Recuperar último corte y últimas observaciones vigentes; revisar histórico relevante.
 - Identificar novedades, datos vigentes y correcciones.
