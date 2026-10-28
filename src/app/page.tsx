@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Activity, ShieldAlert, TrendDown, TrendUp } from "@/components/icons";
 import { MarketSummary } from "@/components/market-summary";
 import { MacroPanel } from "@/components/macro-panel";
@@ -46,6 +47,7 @@ export default async function Home() {
           </div>
 
           <div className="flex items-center justify-end gap-2">
+            <Link href="/analisis" className="button-secondary">Espacio de análisis ↗</Link>
             <form action={signOut}>
               <button className="button-danger" type="submit">Salir</button>
             </form>
