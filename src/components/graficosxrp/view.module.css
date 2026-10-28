@@ -1,0 +1,149 @@
+.screen {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 16px;
+  line-height: normal;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: grid;
+  width: 100%;
+  height: 100dvh;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: #07090d;
+  color: #f4f4f5;
+}
+
+.screen :global(.charts-area) {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+.screen :global(.charts-stack) {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  min-height: 0;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+.screen :global(.charts-stack):global(.is-active) {
+  visibility: visible;
+  pointer-events: auto;
+}
+.screen :global(.chart-panel) {
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  background: #131722;
+}
+.screen :global(.chart-panel) + :global(.chart-panel) {
+  border-top: 1px solid #2a2e39;
+}
+.screen :global(.tradingview-container) {
+  width: 100%;
+  height: 100%;
+  background: #131722;
+}
+.screen :global(.chart-error) {
+  display: grid;
+  height: 100%;
+  margin: 0;
+  place-items: center;
+  color: #fda4af;
+  font-size: 0.8rem;
+}
+.screen :global(.market-strip) {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  border-top: 1px solid #242b37;
+  background: #07090d;
+  padding: 0.65rem 1rem 0.72rem;
+}
+.screen :global(.market-quote) {
+  min-width: 0;
+  border: 1px solid #2d3543;
+  border-radius: 0.5rem;
+  background: linear-gradient(
+    145deg,
+    rgba(18, 23, 32, 0.98),
+    rgba(11, 14, 20, 0.98)
+  );
+  padding: 0.68rem 0.72rem;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+.screen :global(.market-quote):global(.selected) {
+  border-color: #60a5fa;
+  box-shadow: inset 0 0 0 1px #60a5fa;
+}
+.screen :global(.market-quote):focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+.screen :global(.quote-heading),
+.screen :global(.quote-changes) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.screen :global(.quote-heading) strong {
+  color: #fff;
+  font-size: 0.98rem;
+}
+.screen :global(.quote-heading) span {
+  overflow: hidden;
+  color: #f4f4f5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.94rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.screen :global(.quote-changes) {
+  margin-top: 0.45rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.screen :global(.positive) {
+  color: #6ee7b7;
+}
+.screen :global(.negative) {
+  color: #fda4af;
+}
+.screen :global(.unavailable) {
+  color: #71717a;
+}
+.screen :global(.sr-only) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+@media (max-width: 760px) {
+  .screen :global(.market-strip) {
+    grid-auto-columns: minmax(9.5rem, 70vw);
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    overflow-x: auto;
+  }
+}
