@@ -69,3 +69,43 @@ La credencial permite consultar la cuenta. El saldo reportado y el consumo acumu
 No se ejecutó ninguna generación, no se envió imagen alguna ni se compraron créditos. El script no registra secretos, cuerpos de error ni cabeceras; sólo devuelve estados fijos y cifras validadas. No se modificó el comando de build predeterminado del proyecto ni se abrió un endpoint público de diagnóstico.
 
 Siguen pendientes `VISION_MODEL`, `CLOE_VISION_ENABLED` y `CLOE_VISION_USER_IDS`, además de comprobar modelo elegible y las condiciones del piloto antes de una lectura real. La validación de la captura sintética contra los valores esperados continúa pendiente. No se cambió la configuración para activar visión ni pagos como parte de esta actualización documental.
+
+## Intento posterior: una solicitud real de lectura de líneas
+
+Se ejecutó una única solicitud de visión con una imagen sintética propia de un panel y tres líneas horizontales reproducibles (semilla `20261028`). Dos líneas tenían precio escrito y una no tenía etiqueta, para distinguir extracción literal de estimación por el eje. No se enviaron capturas privadas ni datos reales del mercado. El runner reutilizó `generateWidgetReading` y el esquema de producción; al modelo se le entregaron únicamente los bytes PNG, sin los valores de referencia del generador.
+
+Evidencia: despliegue `dpl_5WKu29tRXo6TvJDmYtfdEJitfYEN`, commit remoto `4cac02747daa5c230ebbcfa5ec56e5b3cbaf74a4`.
+
+```json
+{
+  "event": "CLOE_LINE_RECOVERY",
+  "synthetic": true,
+  "generationAttempted": true,
+  "freeTierVerified": false,
+  "model": "google/gemini-2.5-flash-lite",
+  "postCount": 1,
+  "status": "provider_failed",
+  "httpStatus": 403,
+  "reason": "customer_verification_required"
+}
+```
+
+**El Gateway rechazó la solicitud por verificación de cliente pendiente. El modelo no procesó la captura y no devolvió una lectura.** Esto confirma un intento real y su bloqueo; no es una lectura exitosa ni una medida de precisión de la integración. No hubo reintentos, compra de créditos ni cambios de verificación de la cuenta. No se infiere elegibilidad gratuita ni acceso operativo al modelo.
+
+### Inspección visual de Cloe, separada de la API
+
+El coordinador inspeccionó directamente el PNG y fijó su lectura **antes** de consultar los valores del generador. Esta es una lectura visual de Cloe en la conversación, no una respuesta del Gateway ni una función automática ya verificada de la app:
+
+| Elemento | Lectura visual de Cloe | Referencia del generador | Comparación |
+| --- | --- | --- | --- |
+| Línea amarilla con etiqueta | 101.75 USD | 101.75 USD | Coincide literalmente |
+| Línea celeste con etiqueta | 104.00 USD | 104.00 USD | Coincide literalmente |
+| Línea violeta sin etiqueta | Aproximadamente 102.80 USD | 102.75 USD | Error absoluto de estimación: 0.05 USD |
+| RSI | 63.50 | 63.50 | Distinto de la referencia central 50 |
+| VWAP | 101.25 USD, Session | 101.25 USD, Session | No se copió Quarter desde la configuración de la app |
+
+La coincidencia de estas etiquetas y la estimación de una línea en esta imagen sintética no permiten afirmar precisión general en gráficos reales, otras escalas o imágenes de distinta calidad.
+
+La fixture está conservada en `scripts/fixtures/line-recovery.json` como PNG base64 y valores esperados separados; se reproduce mediante `python scripts/generate-line-recovery-fixture.py`. El runner y sus cinco pruebas enfocadas verifican modo de simulación sin red, modelo explícito, saldo cero previo, transporte limitado a un POST y diagnóstico sin secretos. La comprobación visual manual no reemplaza la prueba automática pendiente.
+
+Pendiente para continuar: resolver la verificación de cliente desde la cuenta de Vercel con autorización del usuario y comprobar las condiciones de créditos/modelo antes de otro intento. No se ha realizado esa verificación ni se ha programado un reintento automático.
