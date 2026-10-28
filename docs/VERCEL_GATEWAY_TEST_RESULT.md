@@ -39,3 +39,33 @@ La fixture se generó y revisó visualmente; todavía no se envió a un proveedo
 Desde la cuenta autorizada de Vercel: comprobar acceso al Gateway, créditos disponibles, elegibilidad y precio del modelo; aprobar el coste máximo del piloto y preparar una credencial con presupuesto controlado. Guardar los valores sólo mediante el mecanismo seguro de Vercel, nunca en conversación ni Git. Después configurar `VISION_MODEL`, `CLOE_VISION_USER_IDS` y, al final, `CLOE_VISION_ENABLED=true` en esta rama de vista previa.
 
 Entonces podrá ejecutarse **una** solicitud con la fixture pública, comparar la respuesta contra `expected.json` y revisar en Logs modelo/proveedor, consumo y coste real antes de usar capturas privadas. No se considera la prueba gratuita únicamente porque exista un saldo positivo. La activación, el acceso a facturación y cualquier compra permanecen pendientes; este trabajo no los realiza.
+
+## Comprobación posterior: credencial y saldo verificados en Vercel
+
+El 28 de octubre de 2026 se confirmó que `AI_GATEWAY_API_KEY` ya está guardada como variable sensible en production, preview y development. No se recuperó ni se imprimió su valor. Esta comprobación posterior amplía el corte anterior; no convierte las pruebas simuladas previas en una lectura real.
+
+Se ejecutó el script de sólo lectura dentro del build de una vista previa, reutilizando la credencial existente mediante un override temporal:
+
+```bash
+node scripts/gateway-preflight.mjs && npm run build
+```
+
+Evidencia: despliegue `dpl_2rLsfTW4EqeFjd3Hr1uoKnw1YQ5X`, commit remoto `d6d389ec1b9716b002fc9e160082013dbbcd65c0`. El preflight realizó únicamente `GET https://ai-gateway.vercel.sh/v1/credits` y devolvió:
+
+```json
+{
+  "event": "CLOE_GATEWAY_PREFLIGHT",
+  "generationTested": false,
+  "freeTierVerified": false,
+  "status": "ok",
+  "httpStatus": 200,
+  "balanceUsd": 0,
+  "totalUsedUsd": 0
+}
+```
+
+La credencial permite consultar la cuenta. El saldo reportado y el consumo acumulado son cero. **Esto no prueba por sí solo que falte elegibilidad para créditos gratuitos:** su habilitación puede depender del primer uso o de la verificación de la cuenta; esta consulta no verifica esas condiciones. Tampoco demuestra acceso a un modelo concreto ni que una generación vaya a ser gratuita.
+
+No se ejecutó ninguna generación, no se envió imagen alguna ni se compraron créditos. El script no registra secretos, cuerpos de error ni cabeceras; sólo devuelve estados fijos y cifras validadas. No se modificó el comando de build predeterminado del proyecto ni se abrió un endpoint público de diagnóstico.
+
+Siguen pendientes `VISION_MODEL`, `CLOE_VISION_ENABLED` y `CLOE_VISION_USER_IDS`, además de comprobar modelo elegible y las condiciones del piloto antes de una lectura real. La validación de la captura sintética contra los valores esperados continúa pendiente. No se cambió la configuración para activar visión ni pagos como parte de esta actualización documental.
