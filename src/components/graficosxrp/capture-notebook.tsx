@@ -14,6 +14,8 @@ import { listCaptures, readCapture, saveCapture } from "@/lib/captures/storage";
 import { imageDataUrl, normalizeImage, screenshot } from "@/lib/captures/image";
 import { readCaptureText } from "@/lib/captures/ocr";
 import styles from "./capture-notebook.module.css";
+import { WidgetReadingEditor } from "./widget-reading";
+import type { WidgetReadingBundle } from "@/lib/captures/widget-reading";
 type DraftImage = {
   image: Blob;
   width: number;
@@ -67,6 +69,9 @@ export function CaptureNotebook({
   const [label, setLabel] = useState("");
   const [ocrText, setOcrText] = useState("");
   const [ocrBusy, setOcrBusy] = useState(false);
+  const [widgetReading, setWidgetReading] =
+    useState<WidgetReadingBundle | null>(null);
+  const [readingDirty, setReadingDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [history, setHistory] = useState<CaptureMetadata[]>([]);
@@ -145,6 +150,8 @@ export function CaptureNotebook({
     setPrice("");
     setLabel("");
     setOcrText("");
+    setWidgetReading(null);
+    setReadingDirty(false);
     setMessage("");
     setOpen(true);
   }
@@ -164,6 +171,8 @@ export function CaptureNotebook({
     capturedAt: string | null,
   ) {
     const generation = ++imageGeneration.current;
+    setWidgetReading(null);
+    setReadingDirty(false);
     ocrAbort.current?.abort();
     setOcrText("");
     const normalized = await normalizeImage(blob);
@@ -294,7 +303,12 @@ export function CaptureNotebook({
     setBusy(true);
     setMessage("");
     try {
+      if (readingDirty)
+        throw new Error(
+          "Validá y aplicá el JSON pendiente antes de guardar el corte.",
+        );
       const metadata = buildMetadata(userId, draft, image, levels, ocrText);
+      if (widgetReading) metadata.widgetReading = widgetReading;
       const snapshot = { ...metadata, image: image.image };
       await saveCapture(snapshot);
       draftSaved.current = true;
@@ -316,6 +330,13 @@ export function CaptureNotebook({
     }
   }
   async function showHistory() {
+    if (readingDirty) {
+      setMessage(
+        "Validá o descartá los cambios de lectura pendientes antes de abrir el histórico.",
+      );
+      setOpen(true);
+      return;
+    }
     setMode("history");
     setRecord(null);
     setMessage("");
@@ -362,7 +383,13 @@ export function CaptureNotebook({
           : null);
       if (!snapshot)
         throw new Error("No hay una captura revisada para exportar.");
-      const { ownerId: _ownerId, image: blob, ...metadata } = snapshot;
+      if (!record && readingDirty)
+        throw new Error(
+          "Validá y aplicá el JSON pendiente antes de exportar el corte.",
+        );
+      const exportSnapshot =
+        !record && widgetReading ? { ...snapshot, widgetReading } : snapshot;
+      const { ownerId: _ownerId, image: blob, ...metadata } = exportSnapshot;
       void _ownerId;
       const content = {
         ...metadata,
@@ -791,6 +818,21 @@ export function CaptureNotebook({
                   ))}
                 </ul>
               </section>
+              <WidgetReadingEditor
+                key={record?.id ?? "draft-reading"}
+                image={record?.image ?? image?.image ?? null}
+                value={record?.widgetReading ?? (record ? null : widgetReading)}
+                readOnly={Boolean(record)}
+                onChange={(value) => {
+                  setWidgetReading(value);
+                  setDraft((previous) => ({ ...previous, reviewed: false }));
+                }}
+                onDirty={(dirty) => {
+                  setReadingDirty(dirty);
+                  if (dirty)
+                    setDraft((previous) => ({ ...previous, reviewed: false }));
+                }}
+              />
               {!record ? (
                 <label className={styles.confirm}>
                   <input
@@ -801,7 +843,8 @@ export function CaptureNotebook({
                     }
                   />
                   Confirmo que revisé la captura, el activo, el mercado, la
-                  temporalidad y los niveles. La fecha de observación sólo se
+                  temporalidad, los niveles y la lectura completa (incluidos sus
+                  indicadores y estimaciones). La fecha de observación sólo se
                   aporta si la conozco.
                 </label>
               ) : null}

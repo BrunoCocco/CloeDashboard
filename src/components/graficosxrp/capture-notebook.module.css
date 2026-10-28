@@ -227,3 +227,29 @@
     padding: 14px;
   }
 }
+.jsonEditor {
+  min-height: 260px !important;
+  font-family: ui-monospace, monospace !important;
+}
+.tableWrap {
+  overflow-x: auto;
+  margin: 12px 0;
+  max-height: 480px;
+}
+.readingTable {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 650px;
+  font-size: 12px;
+}
+.readingTable th,
+.readingTable td {
+  border: 1px solid #344154;
+  padding: 7px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.readingTable th {
+  background: #182638;
+}

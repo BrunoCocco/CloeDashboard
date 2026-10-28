@@ -210,3 +210,40 @@ Prueba aislada React DOM con fake-indexeddb: carga y previsualización con decod
 El coordinador comprobó además OCR real en Node con una imagen sintética propia de texto conocido y reconocimiento del número `12345.67`. No usó una captura del usuario. Los tres assets exactos del wrapper (worker 6.0.1, core 6.0.0 y modelo eng 4.0.0) respondieron HTTP 200 desde el entorno de trabajo. Eso no verifica la carga del worker ni el OCR de extremo a extremo en el navegador del usuario. La prueba visual autenticada, los permisos de captura del navegador y el reconocimiento de gráficos reales siguen pendientes.
 
 Siguientes mejoras recomendadas: recortar y ampliar un gráfico antes del OCR; comparar corte A/B conservando hipótesis e invalidación originales; registrar qué evidencia posterior confirmó o contradijo la lectura, sin reescribir el pasado. Después, sincronización por propietario y respaldos en nube con esquema y RLS verificados. No se añaden decisiones automáticas ni ejecución de operaciones.
+
+## 9. Lectura estructurada del widget completo — API no activa
+
+Se añade una lectura de toda la captura, hasta tres paneles, con ficha de activo/exchange/par/temporalidad, referencia de vela, precio mostrado, OHLC, volumen, indicadores dinámicos con parámetros y valores, y marcas con puntos o rangos estimados. Cada campo conserva valor, unidad, origen (`visible`, `estimated`, `unreadable`), confianza cualitativa, motivo y evidencia visible. Los desconocidos deben ser `null`, origen ilegible y confianza nula. No se copian como observados los parámetros programados de TradingView ni se calculan indicadores sin su serie.
+
+La referencia OHLC puede ser una vela histórica bajo el cursor, no una cotización actual; RSI 50 puede ser una línea central y no el valor del RSI. Las marcas estimadas permanecen separadas de los niveles que el usuario confirma manualmente. La interfaz muestra etiquetas legibles en español y conserva los nombres canónicos para exportación.
+
+### Ya operativo sin proveedor de visión
+
+El cuaderno permite descargar una plantilla **sin resultados**, adjuntar captura y plantilla a una herramienta de lectura externa elegida por el usuario, e importar o pegar el objeto de lectura devuelto. La app valida su estructura y exige revisión humana; no declara que la lectura externa haya sido verificada con un proveedor. El JSON debe contener `schemaVersion`, `panels` y `limitations`; los indicadores incluyen `name`, `params: [{name, reading}]` y `values: [{label, reading}]`. El ejemplo descargable detalla el formato y mantiene todos los valores no leídos en null.
+
+Se muestran debajo las tablas completas por panel, incluidos indicadores, parámetros, valores y marcas, con evidencias y limitaciones. El editor JSON permite corregir y validar; los cambios invalidan la revisión previa. Un JSON pendiente impide guardar un corte ambiguo, y la acción de descartar restaura la última lectura validada sin bloquear el guardado de la captura. Durante una solicitud de visión se bloquean ediciones que podrían sobrescribirse; una solicitud fallida no genera datos de reemplazo ni impide seguir manualmente.
+
+Exportaciones: JSON de lectura, CSV aplanado (panel, campo, valor, tipo, unidad, origen, confianza, motivo, evidencia) y JSON completo del corte con imagen. CSV protege fórmulas introducidas como texto y conserva valores numéricos negativos, como MACD. El snapshot local añade `widgetReading` opcional: los cortes V1 anteriores siguen funcionando sin migrar IndexedDB y muestran que no conservan lectura estructurada.
+
+### Integración de servidor preparada y deshabilitada
+
+Se incorpora AI SDK `7.0.155` y Zod `4.6.7`, con documentación y código de la versión instalada revisados. El proveedor se carga sólo en el servidor y de forma diferida, usando `generateText` y `Output.object`. El prompt trata la imagen como datos no confiables, ignora instrucciones escritas dentro de ella, exige evidencia visible, distingue estimaciones y prohíbe rellenar parámetros por defecto, navegar URLs o dar órdenes de inversión.
+
+`GET /api/captures/vision` devuelve estado privado; `POST` requiere sesión válida, usuario autorizado, configuración completa, origen de solicitud permitido y consentimiento explícito de envío. El endpoint acepta únicamente bytes PNG, nunca URLs ni destinos elegidos por el cliente: máximo 3 MB, firma PNG y dimensiones acotadas. Las imágenes locales originales se conservan; si superan 3 MB, se solicita recortar o reducir una copia antes de enviar. La respuesta requiere estructura válida y revisión humana.
+
+**No se habilitó la API, no se configuraron claves/modelos/usuarios y no se invocó ningún proveedor real ni se autorizaron costes.** Sin configuración completa, el servidor no importa ni llama al proveedor y el botón de visión está deshabilitado honestamente. Importación, revisión, histórico y exportación siguen disponibles.
+
+Para una activación futura autorizada, configurar exclusivamente en el servidor:
+
+- `CLOE_VISION_ENABLED=true`, sólo después de aprobar proveedor y coste.
+- `VISION_MODEL`: identificador exacto vigente `proveedor/modelo`, comprobando soporte de imagen y salida estructurada en el catálogo actual. No hay un modelo predeterminado.
+- `AI_GATEWAY_API_KEY`: credencial gestionada por el mecanismo seguro del proyecto; nunca introducirla en conversación, cliente o repositorio.
+- `CLOE_VISION_USER_IDS`: lista explícita de usuarios autorizados al piloto. Una cuenta nueva o un token OIDC ambiental no habilita llamadas.
+
+El consentimiento por imagen muestra Vercel AI Gateway y el modelo de destino. La integración usa máximo 10000 tokens de salida, cero reintentos y un timeout de proveedor de 45 segundos (55 en cliente). No escribe imágenes en logs de la aplicación y desactiva la telemetría de contenido del SDK. Antes de activar deben revisarse presupuesto, retención y registros propios del Gateway/proveedor, además de cuotas por usuario: aún no hay un rate limiter distribuido. Las variables del ejemplo quedan deshabilitadas y sin valores secretos.
+
+### Evidencia y límites
+
+Compilación Next.js, TypeScript y lint correctos; suite combinada de 37 pruebas correcta. Pruebas nuevas cubren tres paneles e indicadores arbitrarios, unidades/valores negativos, origen y desconocidos, rechazo de fuentes inconsistentes, importación etiquetada, CSV y fórmulas, configuración obligatoria, ausencia total de importación/llamada al proveedor cuando está deshabilitado, autenticación y lista de usuarios, consentimiento/origen/formato/límite de carga, una respuesta de proveedor simulada y compatibilidad del histórico V1 con lecturas nuevas.
+
+La integración React DOM/IndexedDB con fixtures comprueba importar una lectura de tres paneles, ver indicadores, invalidar la revisión, recuperar un JSON inválido descartándolo, guardar/reabrir con lectura y exportar el conjunto con imagen. El botón de visión permanece deshabilitado en el fixture sin configuración. No se probó visión real sobre capturas ni se declara fiabilidad de extracción de valores o marcas: esa validación queda pendiente de autorización y del piloto con imágenes reales revisadas.

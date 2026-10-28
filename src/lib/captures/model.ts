@@ -1,3 +1,4 @@
+import type { WidgetReadingBundle } from "./widget-reading";
 export type ReviewedLevel = {
   price: number;
   kind: "support" | "resistance" | "reference";
@@ -25,6 +26,7 @@ export type CaptureMetadata = {
   method: "screen" | "upload";
   width: number;
   height: number;
+  widgetReading?: WidgetReadingBundle;
 };
 export type CaptureRecord = CaptureMetadata & { image: Blob };
 export type DraftMetadata = {
