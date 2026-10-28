@@ -13,6 +13,7 @@ import {
 import { listCaptures, readCapture, saveCapture } from "@/lib/captures/storage";
 import { imageDataUrl, normalizeImage, screenshot } from "@/lib/captures/image";
 import { readCaptureText } from "@/lib/captures/ocr";
+import { detectLocalLinesFromBlob, type LocalLine } from "@/lib/captures/local-lines";
 import styles from "./capture-notebook.module.css";
 import { WidgetReadingEditor } from "./widget-reading";
 import type { WidgetReadingBundle } from "@/lib/captures/widget-reading";
@@ -68,6 +69,8 @@ export function CaptureNotebook({
   const [kind, setKind] = useState<ReviewedLevel["kind"]>("reference");
   const [label, setLabel] = useState("");
   const [ocrText, setOcrText] = useState("");
+  const [localLines, setLocalLines] = useState<LocalLine[]>([]);
+  const [localLineStatus, setLocalLineStatus] = useState("Sin procesar");
   const [ocrBusy, setOcrBusy] = useState(false);
   const [widgetReading, setWidgetReading] =
     useState<WidgetReadingBundle | null>(null);
@@ -150,6 +153,8 @@ export function CaptureNotebook({
     setPrice("");
     setLabel("");
     setOcrText("");
+    setLocalLines([]);
+    setLocalLineStatus("Sin procesar");
     setWidgetReading(null);
     setReadingDirty(false);
     setMessage("");
@@ -175,11 +180,24 @@ export function CaptureNotebook({
     setReadingDirty(false);
     ocrAbort.current?.abort();
     setOcrText("");
+    setLocalLines([]);
+    setLocalLineStatus("Procesando geometría local...");
     const normalized = await normalizeImage(blob);
     if (!alive.current || generation !== imageGeneration.current) return;
     setImage({ ...normalized, method, capturedAt });
     setLevels([]);
     setDraft((previous) => ({ ...previous, reviewed: false }));
+    try {
+      const found = await detectLocalLinesFromBlob(normalized.image);
+      if (!alive.current || generation !== imageGeneration.current) return;
+      setLocalLines(found);
+      setLocalLineStatus(found.length
+        ? found.length + " líneas horizontales candidatas (sin precios ni clasificación automática)."
+        : "No se detectaron líneas largas de alto contraste.");
+    } catch {
+      if (alive.current && generation === imageGeneration.current)
+        setLocalLineStatus("No pudo ejecutarse el detector local; la captura sigue disponible.");
+    }
   }
   async function capture() {
     if (!navigator.mediaDevices?.getDisplayMedia) {
@@ -730,6 +748,23 @@ export function CaptureNotebook({
                   <summary>Texto OCR conservado</summary>
                   <pre className={styles.raw}>{record.ocrText}</pre>
                 </details>
+              ) : null}
+              {!record && image ? (
+                <section className={styles.section}>
+                  <h2>Detector geométrico local · experimental</h2>
+                  <p role="status">{localLineStatus}</p>
+                  <p>Se ejecuta únicamente en este navegador. Posibles cuadrículas, velas o indicadores pueden parecer líneas; ninguna detección se confirma ni se convierte en soporte o resistencia.</p>
+                  {localLines.length > 0 ? (
+                    <details>
+                      <summary>Ver {localLines.length} líneas candidatas</summary>
+                      <ul>
+                        {localLines.slice(0, 30).map((line, i) => (
+                          <li key={i}>Línea {i+1} · y={line.y}px · x={line.x1}–{line.x2}px · precio no determinado · pendiente de revisión</li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : null}
+                </section>
               ) : null}
               <section className={styles.section}>
                 <h2>Niveles revisados</h2>
