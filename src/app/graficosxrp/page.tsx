@@ -9,5 +9,5 @@ export default async function GraficosXrpPage() {
   const { data, error } = await supabase.auth.getClaims();
   const userId = typeof data?.claims?.sub === "string" ? data.claims.sub : null;
   if (error || !userId) redirect("/login");
-  return <GraficosXrpView />;
+  return <GraficosXrpView userId={userId} />;
 }

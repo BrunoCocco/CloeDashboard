@@ -6,6 +6,7 @@ import { useState } from "react";
 import styles from "./view.module.css";
 import MarketStrip from "./market-strip";
 import TradingViewChart from "./tradingview-chart";
+import { CaptureNotebook } from "./capture-notebook";
 
 const SYMBOLS: Record<string, string> = {
   BTC: "BINANCE:BTCUSD",
@@ -22,7 +23,7 @@ const PERIODS = [
   { interval: "240", label: "4 horas" },
 ];
 
-function App() {
+function App({ userId }: { userId: string }) {
   const [selected, setSelected] = useState("BTC");
   const [visited, setVisited] = useState<string[]>(["BTC"]);
   function selectAsset(asset: string) {
@@ -34,6 +35,12 @@ function App() {
   }
   return (
     <main className={styles.screen}>
+      <CaptureNotebook
+        key={userId}
+        userId={userId}
+        asset={selected}
+        market={SYMBOLS[selected]}
+      />
       <div className="charts-area">
         {visited.map((asset) => (
           <div

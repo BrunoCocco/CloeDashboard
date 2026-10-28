@@ -178,3 +178,35 @@ El JSON exportado incorpora el fundamental y las noticias del activo seleccionad
 Compilación Next.js, TypeScript y lint correctos; suite combinada de veintidós pruebas correcta, cero fallos. Se añadieron pruebas de contrato explícito frente a menciones macro, ausencia de herencia de confianza/régimen, saneado de fuentes, fechas, noticias verificadas, aislamiento por propietario y selección por activo antes del límite. La integración React DOM aislada comprueba selector BTC→SOL, panel específico y snapshot exportado sin mezclar activos, además de las regresiones previas de notas, niveles y recuperación local. El canvas continúa sustituido por un fixture en esa prueba; no es una revisión visual del gráfico.
 
 No se cargó investigación nueva, no se escribieron tablas ni se declaró que los bloques específicos existan ya en la base viva. La auditoría directa de tablas continúa pendiente del permiso del conector al proyecto correcto. El estado de Auth se recuperó a respuestas HTTP 200 en salud/configuración según la comprobación posterior del coordinador; esto no prueba un login real ni el contenido privado. Pendiente: verificar con sesión válida los análisis y noticias realmente cargados y completar las cargas administrativas específicas con fuentes y cortes.
+
+## 8. Capturas revisadas e histórico local en vista-graficosxrp
+
+Se mantiene la rama `vista-graficosxrp` y su disposición de tres widgets. Una barra compacta abre un cuaderno modal; abrirlo, cerrarlo o guardar no desmonta los gráficos visitados ni sus dibujos en la sesión. La persistencia de esos dibujos después de recargar sigue fuera del alcance del widget alojado. Cerrar y volver a abrir el cuaderno retoma el borrador en memoria sin borrar captura o notas ni reasignar el activo. Nuevo corte pide confirmación antes de descartar un borrador con contenido.
+
+Flujo incorporado: capturar una pestaña con permiso del navegador o cargar PNG/JPEG/WebP → revisar la previsualización → corregir ficha de activo, exchange, par y temporalidad → añadir observaciones, hipótesis e invalidación → confirmar niveles manualmente y revisión final → guardar un corte nuevo → consultar el histórico y abrirlo en sólo lectura → exportar PNG o JSON con imagen y procedencia. La identidad sugerida del selector se puede corregir porque el usuario puede haber cambiado el símbolo dentro de un widget.
+
+La solicitud de captura se inicia directamente desde el gesto del botón. El cuaderno se oculta antes de tomar el frame y todos los tracks se detienen al terminar o fallar. Hay espera de frame y timeout. La alternativa de carga permanece disponible cuando el navegador no ofrece captura. Las imágenes se decodifican, comprueban por formato/firma, tamaño y dimensiones, y normalizan a PNG: máximo 12 MB, 8192 píxeles por lado y 20 megapíxeles. La previsualización permite revisar qué se guardará.
+
+La fecha de guardado se registra siempre. La captura en la app tiene fecha propia; una imagen importada conserva `capturedAt: null`. La fecha de observación no se inventa: es un campo opcional informado por el usuario. Los cortes no se presentan como cotizaciones actuales ni como lectura automática del mercado.
+
+### Lectura asistida real, con límites explícitos
+
+Se integra Tesseract.js `6.0.1` de forma diferida. Al pulsar OCR, el navegador descarga motor, worker y modelo públicos y procesa la imagen localmente; no se envía la captura a un servicio de visión. Hay cancelación y límite de 90 segundos; fallos de descarga o reconocimiento permiten continuar manualmente. Se desechan resultados si cambia la imagen y cualquier nuevo texto OCR invalida la revisión anterior.
+
+OCR extrae texto, no interpreta dibujos, líneas o velas. Los candidatos numéricos conservan el token original, incluidos separadores ambiguos. Nunca se convierten automáticamente en soporte o resistencia. El usuario debe corregir precio, clasificarlo, etiquetarlo y confirmar cada nivel. La interfaz muestra la interpretación del campo con punto decimal antes de confirmarlo. No hay API de IA ficticia ni afirmaciones de lectura visual integral.
+
+### Archivo y exportación
+
+IndexedDB conserva metadatos e imágenes Blob en stores separados mediante una misma transacción; no se guardan imágenes grandes en localStorage. Las claves e índices incluyen el propietario. Las consultas y reaperturas se limitan a ese usuario y pueden filtrarse por activo. Se muestran hasta los últimos 100 cortes de cada filtro sin borrar los anteriores. `add`, en lugar de reemplazo, impide sobrescribir un corte existente. Los errores de apertura, permiso o escritura se muestran y no se declara guardado antes de completar la transacción.
+
+El archivo es local, no está cifrado y depende del navegador y dispositivo. No se sincronizó ni migró Supabase. El JSON exportado contiene la imagen PNG en data URL, ficha, texto OCR revisable, niveles confirmados y fechas diferenciadas; omite el identificador interno del propietario. El PNG puede exportarse también antes de guardar como respaldo de la imagen.
+
+### Verificación y pendientes
+
+Verificación: compilación Next.js, TypeScript y lint correctos; 27 pruebas correctas en la suite combinada. Pruebas nuevas: preservación de tokens ambiguos, rechazo de niveles no confirmados o inválidos, revisión obligatoria, fechas opcionales sin inventar, formatos/firmas/tamaño/dimensiones, persistencia de metadatos e imagen, aislamiento de propietario/activo y atomicidad al intentar un duplicado.
+
+Prueba aislada React DOM con fake-indexeddb: carga y previsualización con decoder simulado, texto OCR simulado, confirmación de nivel, guardado, histórico de sólo lectura, reapertura después de desmontar/remontar, exportaciones y conservación de widgets montados. También se simulan captura y rechazo de permiso; se comprueba que la solicitud ocurre en el gesto y que los tracks se detienen aunque falle la normalización. Estas simulaciones no prueban la captura del sistema ni el canvas real del navegador.
+
+El coordinador comprobó además OCR real en Node con una imagen sintética propia de texto conocido y reconocimiento del número `12345.67`. No usó una captura del usuario. Los tres assets exactos del wrapper (worker 6.0.1, core 6.0.0 y modelo eng 4.0.0) respondieron HTTP 200 desde el entorno de trabajo. Eso no verifica la carga del worker ni el OCR de extremo a extremo en el navegador del usuario. La prueba visual autenticada, los permisos de captura del navegador y el reconocimiento de gráficos reales siguen pendientes.
+
+Siguientes mejoras recomendadas: recortar y ampliar un gráfico antes del OCR; comparar corte A/B conservando hipótesis e invalidación originales; registrar qué evidencia posterior confirmó o contradijo la lectura, sin reescribir el pasado. Después, sincronización por propietario y respaldos en nube con esquema y RLS verificados. No se añaden decisiones automáticas ni ejecución de operaciones.
