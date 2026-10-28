@@ -125,29 +125,9 @@ export function WidgetReadingEditor({
       abort.current?.abort();
     };
   }, [image, value]);
-  useEffect(() => {
-    if (readOnly) return;
-    let active = true;
-    fetch("/api/captures/vision", { signal: AbortSignal.timeout(10000) })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("status_unavailable");
-        const status = await response.json();
-        if (active) {
-          setConfigured(status.configured === true);
-          setDestination(
-            status.configured === true
-              ? `${String(status.provider)} · ${String(status.model)}`
-              : "",
-          );
-        }
-      })
-      .catch(() => {
-        if (active) setConfigured(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [readOnly]);
+  // Zero-cost local mode: remote vision is deliberately disabled.
+  // No status fetch and no image POST may be initiated from this editor.
+  useEffect(() => { setConfigured(false); setDestination(""); }, []);
   function apply(text: string) {
     if (busy) return;
     try {
