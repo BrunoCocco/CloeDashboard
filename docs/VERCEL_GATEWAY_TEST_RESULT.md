@@ -109,3 +109,28 @@ La coincidencia de estas etiquetas y la estimación de una línea en esta imagen
 La fixture está conservada en `scripts/fixtures/line-recovery.json` como PNG base64 y valores esperados separados; se reproduce mediante `python scripts/generate-line-recovery-fixture.py`. El runner y sus cinco pruebas enfocadas verifican modo de simulación sin red, modelo explícito, saldo cero previo, transporte limitado a un POST y diagnóstico sin secretos. La comprobación visual manual no reemplaza la prueba automática pendiente.
 
 Pendiente para continuar: resolver la verificación de cliente desde la cuenta de Vercel con autorización del usuario y comprobar las condiciones de créditos/modelo antes de otro intento. No se ha realizado esa verificación ni se ha programado un reintento automático.
+
+
+## Continuidad posterior al trabajo desde móvil — 2026-10-28
+
+### Estado observado y corte vigente
+
+La rama `vista-graficosxrp` avanzó después del corte anterior mediante cuatro commits: `e06c5ce` (detector de píxeles sin conexión), `c6ee19f` (integración de candidatas locales), `c602b5c` (desactivación de consultas periódicas) y `d61e11b2bacb2f81dfc08ff763765fbc7af4df67` (bloqueo del endpoint remoto). Este último es la base de esta actualización documental. El coordinador comprobó el despliegue `dpl_vmqJTkyDc7Um6bH76F9RKMEEBSip` en estado `READY` para ese SHA; READY acredita el despliegue, no una prueba del flujo completo en navegador.
+
+La lectura remota y sus instrucciones de activación descritas arriba quedan como **histórico**. El código vigente mantiene la visión remota desactivada: GET devuelve `configured: false` y `status: disabled_local_only`; POST responde 503 y no importa ni invoca al proveedor. El editor no inicia consultas de estado ni envíos de imagen a ese endpoint. No se reactivó la API, no se ejecutaron solicitudes reales y no se modificaron claves durante esta actualización.
+
+El cuaderno incorpora ahora un detector geométrico local sobre los píxeles de la captura mediante canvas. Esta detección no envía la imagen a la red: produce candidatas de líneas horizontales con coordenadas de imagen, `source: pixel-local`, `confidence: candidate` y `price: null`. Una candidata no es un soporte o resistencia confirmado ni un precio recuperado. Esto no implica que toda la aplicación funcione sin red: los widgets y otros recursos conservan sus conexiones propias.
+
+### Pendientes concretos
+
+- Calibrar el eje del gráfico para convertir coordenadas a precios, con revisión y límites explícitos.
+- Superponer las candidatas sobre la captura para que el usuario pueda revisarlas y descartarlas.
+- Persistir detecciones y su procedencia: actualmente `localLines` vive en estado del componente, sin incorporarse al modelo ni al almacenamiento del cuaderno.
+- Validar el detector con capturas reales y el flujo de navegador; no inferir precisión ni funcionamiento completo desde la inspección del código.
+- Actualizar las pruebas frente al modo local y al endpoint bloqueado. Los resultados anteriores de la suite corresponden a cortes históricos; no se declara vigente una cifra de pruebas sin ejecutarlas sobre este corte.
+
+### Límites de esta actualización
+
+Se revisaron las instrucciones actuales del repositorio y los archivos del detector, del cuaderno y del endpoint; solo se añade este registro. Los siguientes pasos son propuestas de desarrollo, no funciones ya completadas. No hubo cambios de código, base de datos, autenticación, configuración ni pruebas de ejecución de la app.
+
+No se localizó una anotación móvil nueva específica en Drive o Library; el documento de pendientes encontrado era anterior y la fuente de contexto personal no estuvo disponible. Por tanto, esta continuidad se reconstruye desde el estado verificable del repositorio y el despliegue comunicado por el coordinador, sin atribuir decisiones adicionales a una nota no encontrada.
