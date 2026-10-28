@@ -1,3 +1,4 @@
+import type { LocalReading } from "./local-reading";
 import type { WidgetReadingBundle } from "./widget-reading";
 export type ReviewedLevel = {
   price: number;
@@ -27,6 +28,7 @@ export type CaptureMetadata = {
   width: number;
   height: number;
   widgetReading?: WidgetReadingBundle;
+  localReading?: LocalReading;
 };
 export type CaptureRecord = CaptureMetadata & { image: Blob };
 export type DraftMetadata = {

@@ -211,7 +211,7 @@ function route({ userId = "allowed-user", env = {}, error = null } = {}) {
 test("unconfigured endpoint returns honest status and never imports or invokes provider", async () => {
   const subject = route();
   const status = await subject.api.GET();
-  assert.equal((await status.json()).status, "not_configured");
+  assert.equal((await status.json()).status, "disabled_local_only");
   assert.equal(
     (
       await subject.api.POST(
@@ -225,8 +225,8 @@ test("unconfigured endpoint returns honest status and never imports or invokes p
   assert.equal(subject.imports(), 0);
   assert.equal(subject.calls(), 0);
 });
-test("auth and allowlist fail closed even with configured provider", async () => {
-  for (const [input, expected] of [
+test("local-only endpoint rejects every identity even with configured provider", async () => {
+  for (const [input] of [
     [{ userId: null, env: enabledEnv }, 401],
     [{ userId: "other-user", env: enabledEnv }, 403],
     [{ userId: "allowed-user", env: enabledEnv, error: { status: 503 } }, 401],
@@ -237,12 +237,12 @@ test("auth and allowlist fail closed even with configured provider", async () =>
         method: "POST",
       }),
     );
-    assert.equal(result.status, expected);
+    assert.equal(result.status, 503);
     assert.equal(subject.imports(), 0);
     assert.equal(subject.calls(), 0);
   }
 });
-test("consent, origin, content type and bounded PNG validated before provider", async () => {
+test("local-only rejects payloads and bounded PNG helper still rejects oversize", async () => {
   const subject = route({ env: enabledEnv });
   for (const headers of [
     {},
@@ -256,7 +256,7 @@ test("consent, origin, content type and bounded PNG validated before provider", 
         body: "{}",
       }),
     );
-    assert.ok([400, 403].includes(result.status));
+    assert.equal(result.status, 503);
   }
   const oversized = new Request("https://example.test", {
     method: "POST",
@@ -271,7 +271,7 @@ test("consent, origin, content type and bounded PNG validated before provider", 
   assert.equal(subject.calls(), 0);
 });
 
-test("configured allowed consented request reaches only the mocked provider with bounded inline PNG", async () => {
+test("configured allowed consented request cannot activate remote generation", async () => {
   const subject = route({ env: enabledEnv });
   const png = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZQAAAABJRU5ErkJggg==",
@@ -288,12 +288,9 @@ test("configured allowed consented request reaches only the mocked provider with
       body: png,
     }),
   );
-  assert.equal(result.status, 200);
-  assert.equal(subject.imports(), 1);
-  assert.equal(subject.calls(), 1);
-  const body = await result.json();
-  assert.equal(body.method, "vision");
-  assert.equal(body.data.panels.length, 3);
+  assert.equal(result.status, 503);
+  assert.equal(subject.imports(), 0);
+  assert.equal(subject.calls(), 0);
 });
 
 test("version-one local snapshots remain readable and new structured readings persist without a DB migration", async () => {

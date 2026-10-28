@@ -103,8 +103,8 @@ export function WidgetReadingEditor({
 }) {
   const [json, setJson] = useState("");
   const [message, setMessage] = useState("");
-  const [configured, setConfigured] = useState(false);
-  const [destination, setDestination] = useState("");
+  const configured = false;
+  const destination = "";
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [jsonDirty, setJsonDirty] = useState(false);
@@ -127,7 +127,6 @@ export function WidgetReadingEditor({
   }, [image, value]);
   // Zero-cost local mode: remote vision is deliberately disabled.
   // No status fetch and no image POST may be initiated from this editor.
-  useEffect(() => { setConfigured(false); setDestination(""); }, []);
   function apply(text: string) {
     if (busy) return;
     try {
@@ -216,11 +215,8 @@ export function WidgetReadingEditor({
   }
   const data: WidgetReading | null = value?.data ?? null;
   return (
-    <section
-      className={styles.section}
-      aria-label="Lectura completa del widget"
-    >
-      <h2>Lectura completa: paneles, indicadores y marcas</h2>
+    <section className={styles.section} aria-label="Indicadores y otros datos">
+      <h2>Indicadores y otros datos (lectura opcional)</h2>
       <p>
         OHLC, precio mostrado, volumen y cada indicador se conservan con unidad,
         evidencia y origen. Un OHLC bajo el cursor puede ser histórico; RSI 50
@@ -231,7 +227,7 @@ export function WidgetReadingEditor({
           <p className={styles.notice}>
             {configured
               ? `Destino autorizado por configuración: ${destination}. El envío puede generar costes; la lectura requiere tu revisión.`
-              : "Visión completa no habilitada: falta autorización y configuración del proveedor. No se envían imágenes. Podés importar una lectura externa o completar el JSON a partir de la captura."}
+              : "Visión remota desactivada en modo local. El detector geométrico no lee indicadores; podés incorporar una lectura revisada. No se envían imágenes."}
           </p>
           {configured ? (
             <label className={styles.confirm}>
@@ -246,20 +242,22 @@ export function WidgetReadingEditor({
             </label>
           ) : null}
           <div className={styles.row}>
-            <button
-              type="button"
-              disabled={
-                !configured ||
-                !consent ||
-                !image ||
-                busy ||
-                jsonDirty ||
-                image.size > 3 * 1024 * 1024
-              }
-              onClick={() => void vision()}
-            >
-              Leer widget completo con visión
-            </button>
+            {configured ? (
+              <button
+                type="button"
+                disabled={
+                  !configured ||
+                  !consent ||
+                  !image ||
+                  busy ||
+                  jsonDirty ||
+                  image.size > 3 * 1024 * 1024
+                }
+                onClick={() => void vision()}
+              >
+                Leer widget completo con visión
+              </button>
+            ) : null}
             {busy ? (
               <button type="button" onClick={() => abort.current?.abort()}>
                 Cancelar visión
