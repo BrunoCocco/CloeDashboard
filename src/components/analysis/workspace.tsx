@@ -1,6 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { ChartPanel } from "./chart-panel";
+import { AssetFundamentalPanel } from "./fundamental-panel";
+import {
+  emptyFundamental,
+  type AssetFundamentals,
+} from "@/lib/analysis/fundamentals";
 import {
   emptyWorkspace,
   FRAMES,
@@ -16,9 +21,11 @@ type Context = { available: boolean; cutoff: string; summary: string | null };
 export function AnalysisWorkspace({
   userId,
   context,
+  fundamentals,
 }: {
   userId: string;
   context: Context;
+  fundamentals: AssetFundamentals;
 }) {
   const [workspace, setWorkspace] = useState<Workspace>(emptyWorkspace);
   const [hydrated, setHydrated] = useState(false);
@@ -35,6 +42,8 @@ export function AnalysisWorkspace({
   const storageKey = `cloe-analysis-v1:${userId}`;
   const symbol = workspace.selected;
   const asset = workspace.assets[symbol];
+  const fundamental =
+    fundamentals[symbol] ?? emptyFundamental(symbol, "unavailable");
   useEffect(() => {
     let value = emptyWorkspace(),
       warning = "";
@@ -161,7 +170,7 @@ export function AnalysisWorkspace({
         {
           ...workspace,
           exportedAt: new Date().toISOString(),
-          contextSnapshot: context,
+          contextSnapshot: { ...context, assetFundamental: fundamental },
           marketSnapshot: cache,
         },
         null,
@@ -288,6 +297,7 @@ export function AnalysisWorkspace({
           Actualizar velas
         </button>
       </div>
+      <AssetFundamentalPanel symbol={symbol} analysis={fundamental} />
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
         <section
           className="grid min-w-0 gap-3"
@@ -447,8 +457,8 @@ export function AnalysisWorkspace({
             <h2 className="text-sm font-semibold">Archivo de investigación</h2>
             <p className="mt-2 text-xs leading-5 text-muted">
               JSON: restaura notas y niveles; incluye un corte de las velas
-              consultadas y síntesis disponible. CSV: velas del activo. PNG:
-              cada gráfico.
+              consultadas, fundamental seleccionado y síntesis disponible. CSV:
+              velas del activo. PNG: cada gráfico.
             </p>
             <button
               onClick={exportCsv}

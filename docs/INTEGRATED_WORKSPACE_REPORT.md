@@ -129,3 +129,52 @@ Se detectó y corrigió un problema de manejo de errores de la app: login y regi
 El proxy de sesión captura fallos de verificación: permite mostrar la página pública de acceso y mantiene bloqueado el contenido privado. Una identidad sólo es válida si hay `sub` no vacío y ninguna devolución de error. No se desactivó autenticación, no se cambiaron claves, cuentas, contraseñas ni políticas RLS. El mínimo previo de ocho caracteres sigue vigente: no hay evidencia de que sea el motivo del problema de Bruno.
 
 Verificación de esta corrección: build Next.js, TypeScript y lint correctos; suite combinada de dieciséis pruebas correcta, cero fallos. Las nuevas pruebas de regresión usan respuestas simuladas explícitas, sin credenciales de usuarios: HTTP 503, 429, excepciones de red, distinción de credenciales y confirmación, redirect exitoso, fallo de registro y protección de rutas ante verificación fallida. No equivalen a un inicio de sesión real contra Supabase. Pendiente: recuperar disponibilidad y acceso administrativo al proyecto correcto; luego comprobar login con una sesión autorizada, lecturas del dashboard y sólo entonces planificar una actualización de datos/esquema trazable.
+
+## 7. Evolución: fundamental por activo y DATOS MERCADO
+
+El trabajo continúa en una única rama de avances, `codex/cloe-evolucion`. Se conecta el panel fundamental al selector existente: BTC muestra su análisis específico; SOL muestra el suyo, y así para los siete activos, sin recargar la página. Se conservan las notas, los niveles y las exportaciones anteriores.
+
+Se separa expresamente **DATOS MERCADO**, con macro, calendario y síntesis general del dashboard. Este bloque conserva su alcance general al cambiar de activo; no se reclasifica como tesis de la moneda seleccionada ni modifica los indicadores técnicos.
+
+### Datos compatibles con el esquema real del repositorio
+
+La tabla `fundamental_analyses` documentada no tiene `asset_id` ni `symbol`. No se añadieron consultas a columnas inexistentes ni se aplicaron migraciones. El lector acepta únicamente bloques explícitos dentro del JSON `evidence` existente, mediante este contrato para futuras cargas administrativas:
+
+```json
+{
+  "scope": "asset",
+  "symbol": "BTC",
+  "summary": "Resumen específico del activo, redactado a partir de evidencia",
+  "as_of": "2026-10-28T09:00:00Z",
+  "hypothesis": "Hipótesis separada de los hechos observados",
+  "regime": "neutral",
+  "evidence": [
+    {
+      "text": "Hecho documentado del activo",
+      "as_of": "2026-10-27T12:00:00Z",
+      "source": {"name": "Nombre de la fuente", "url": "https://example.org/fuente"}
+    }
+  ],
+  "risks": ["Riesgo específico documentado"],
+  "opportunities": ["Oportunidad específica documentada"],
+  "sources": [{"name": "Nombre de la fuente", "url": "https://example.org/fuente"}]
+}
+```
+
+Este ejemplo describe estructura, no contiene investigación ni datos financieros actuales. Los bloques van en el array `evidence` de un registro fundamental del propietario; el resumen principal del registro mantiene su función general. `confidence`, si se aporta, debe ser un número de 0 a 100 declarado para ese bloque; no se hereda del análisis general.
+
+El lector filtra primero por propietario y por contención JSON `{scope: "asset", symbol: "BTC"}`, después ordena por `as_of` del registro y toma el último. Hace consultas independientes para cada activo: muchos registros de SOL no esconden el último BTC. Una mención casual de BTC en texto macro no se convierte en un análisis de BTC. Si hay varios bloques válidos del mismo activo en el registro elegido, se prioriza su fecha explícita. Sin fecha del bloque, la pantalla identifica claramente que se usa el corte del registro.
+
+La pantalla distingue falta de análisis y fallo de consulta; muestra resumen, hipótesis, evidencia, fuentes, riesgos, oportunidades y confianza sólo cuando están documentados. Las URLs de fuentes admiten únicamente HTTP/HTTPS. Los campos ausentes se marcan sin información, no se completan a partir del macro.
+
+### Noticias propias del activo
+
+También se consultan hasta tres entradas de `news_items`, filtradas por propietario, `affected_assets` exacto y estado `official` o `corroborated`, ordenadas por fecha de publicación. Se muestran su fuente, fecha y estado. Son noticias del histórico propio, no un servicio de noticias en tiempo real ni una tesis generada automáticamente. Si falla la lectura de la tesis, las noticias pueden seguir disponibles de forma independiente.
+
+### Guardado y comprobaciones de esta entrega
+
+El JSON exportado incorpora el fundamental y las noticias del activo seleccionado dentro de `contextSnapshot.assetFundamental`, con identidad y corte. Restaurar el archivo sigue recuperando sólo el espacio editable; no convierte este snapshot histórico en información actual ni reemplaza datos del servidor.
+
+Compilación Next.js, TypeScript y lint correctos; suite combinada de veintidós pruebas correcta, cero fallos. Se añadieron pruebas de contrato explícito frente a menciones macro, ausencia de herencia de confianza/régimen, saneado de fuentes, fechas, noticias verificadas, aislamiento por propietario y selección por activo antes del límite. La integración React DOM aislada comprueba selector BTC→SOL, panel específico y snapshot exportado sin mezclar activos, además de las regresiones previas de notas, niveles y recuperación local. El canvas continúa sustituido por un fixture en esa prueba; no es una revisión visual del gráfico.
+
+No se cargó investigación nueva, no se escribieron tablas ni se declaró que los bloques específicos existan ya en la base viva. La auditoría directa de tablas continúa pendiente del permiso del conector al proyecto correcto. El estado de Auth se recuperó a respuestas HTTP 200 en salud/configuración según la comprobación posterior del coordinador; esto no prueba un login real ni el contenido privado. Pendiente: verificar con sesión válida los análisis y noticias realmente cargados y completar las cargas administrativas específicas con fuentes y cortes.
