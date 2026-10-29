@@ -5,9 +5,12 @@ import {
   calibrate,
   localSummary,
   formatEstimatedPrice,
+  candidatePrice,
+  candidateOrigin,
   type LocalReading,
   type Calibration,
 } from "@/lib/captures/local-reading";
+import { positivePrice } from "@/lib/captures/model";
 import type { LocalLine } from "@/lib/captures/local-lines";
 import styles from "./capture-notebook.module.css";
 type Point = { x: number; y: number };
@@ -39,7 +42,15 @@ export function LocalReadingEditor({
   const [error, setError] = useState("");
   function reset() {
     onDirty(true);
-    onChange(null);
+    if (value)
+      onChange({
+        ...value,
+        summary: undefined,
+        candidates: value.candidates.map((l) => ({
+          ...l,
+          decision: "pending",
+        })),
+      });
     setPoints([]);
     setSelecting(true);
     setError("");
@@ -62,7 +73,20 @@ export function LocalReadingEditor({
         scale,
         panel,
       };
-      onChange(calibrate(lines, c, width, height));
+      const originals = lines.map((line) => {
+        const previous = value?.candidates.find(
+          (item) => Math.abs(item.y - line.y) < 1,
+        );
+        return {
+          ...line,
+          ocrLabel: previous?.ocrLabel,
+          correctedPrice: previous?.correctedPrice,
+        };
+      });
+      onChange({
+        ...calibrate(originals, c, width, height),
+        labelScan: value?.labelScan,
+      });
       setSelecting(false);
       onDirty(false);
       setError("");
@@ -81,14 +105,15 @@ export function LocalReadingEditor({
     <section className={styles.section}>
       <h2>Lectura local de líneas</h2>
       <p>
-        Elegí un solo panel de precio. Excluí RSI, volumen y otros paneles: cada
-        eje requiere su propia calibración. Los precios resultantes son
-        estimaciones revisables.
+        Las etiquetas del costado se leen automáticamente en tu navegador.
+        Revisá el texto y el precio antes de confirmar. Una línea sin etiqueta
+        queda sin precio; podés corregirla o usar la calibración manual
+        opcional.
       </p>
       {!readOnly ? (
         <>
           <button type="button" onClick={reset}>
-            Seleccionar panel y calibrar
+            Calibración manual opcional
           </button>{" "}
           <button
             type="button"
@@ -300,17 +325,29 @@ export function LocalReadingEditor({
       {value ? (
         <>
           <p>{value.summary ?? localSummary(value)}</p>
+          {value.labelScan ? (
+            <details>
+              <summary>Texto y procedencia del escaneo local</summary>
+              <p>
+                Recorte derecho: x={Math.round(value.labelScan.crop.x0)}–
+                {Math.round(value.labelScan.crop.x1)}; palabras con coordenadas
+                originales. Confianza OCR no significa certeza de precio.
+              </p>
+              <pre className={styles.raw}>{value.labelScan.text}</pre>
+            </details>
+          ) : null}
           <p>
             {c
               ? `Escala ${c.scale === "log" ? "logarítmica" : "lineal"} · puntos del eje: ${c.first.price} / ${c.second.price}. No es una cotización actual.`
-              : "Sin calibración: geometría conservada, precios no determinados. No se pueden confirmar niveles sin calibrar."}
+              : "Sin calibración manual. Las etiquetas OCR legibles o correcciones pueden confirmarse individualmente; las líneas sin precio siguen pendientes."}
           </p>
           <div className={styles.tableWrap}>
             <table className={styles.readingTable}>
               <thead>
                 <tr>
                   <th>Línea</th>
-                  <th>Precio estimado</th>
+                  <th>Precio recuperado / corregido</th>
+                  <th>Procedencia y etiqueta</th>
                   <th>Clasificación humana</th>
                   <th>Revisión</th>
                 </tr>
@@ -320,9 +357,70 @@ export function LocalReadingEditor({
                   <tr key={l.id}>
                     <td>{i + 1}</td>
                     <td>
-                      {l.estimatedPrice === null
+                      {candidatePrice(l) === null
                         ? "No determinado"
-                        : formatEstimatedPrice(l.estimatedPrice)}
+                        : l.correctedPrice !== undefined ||
+                            (l.ocrLabel?.price !== null &&
+                              l.ocrLabel?.price !== undefined)
+                          ? String(candidatePrice(l))
+                          : formatEstimatedPrice(candidatePrice(l)!)}
+                      {!readOnly ? (
+                        <label>
+                          Corregir precio
+                          <input
+                            aria-label={`Precio línea ${i + 1}`}
+                            inputMode="decimal"
+                            key={`${l.id}-${candidatePrice(l)}`}
+                            defaultValue={candidatePrice(l) ?? ""}
+                            onChange={() => onDirty(true)}
+                            onBlur={(e) => {
+                              try {
+                                const text = e.target.value.trim();
+                                const price = text
+                                  ? positivePrice(text)
+                                  : undefined;
+                                if (price === candidatePrice(l)) {
+                                  onDirty(false);
+                                  setError("");
+                                  return;
+                                }
+                                onChange({
+                                  ...value,
+                                  summary: undefined,
+                                  candidates: value.candidates.map((item) =>
+                                    item.id === l.id
+                                      ? {
+                                          ...item,
+                                          correctedPrice: price,
+                                          decision: "pending",
+                                        }
+                                      : item,
+                                  ),
+                                });
+                                onDirty(false);
+                                setError("");
+                              } catch (err) {
+                                setError(
+                                  err instanceof Error
+                                    ? err.message
+                                    : "Precio inválido.",
+                                );
+                              }
+                            }}
+                          />
+                        </label>
+                      ) : null}
+                    </td>
+                    <td>
+                      {candidateOrigin(l)}
+                      {l.ocrLabel ? (
+                        <>
+                          <br />
+                          Texto original: «{l.ocrLabel.raw}» · OCR{" "}
+                          {Math.round(l.ocrLabel.confidence)}%
+                          {l.ocrLabel.issue ? <p>{l.ocrLabel.issue}</p> : null}
+                        </>
+                      ) : null}
                     </td>
                     <td>
                       {readOnly ? (
@@ -390,9 +488,9 @@ export function LocalReadingEditor({
                           <option value="pending">Pendiente</option>
                           <option
                             value="accepted"
-                            disabled={l.estimatedPrice === null}
+                            disabled={candidatePrice(l) === null}
                           >
-                            Confirmar nivel estimado
+                            Confirmar precio revisado
                           </option>
                           <option value="rejected">Descartar</option>
                         </select>

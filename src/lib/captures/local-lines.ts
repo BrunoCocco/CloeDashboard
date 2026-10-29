@@ -73,13 +73,17 @@ export function detectHorizontalLines(
       const contrast = Math.max(
         Math.abs(lum(k) - lum(up)),
         Math.abs(lum(k) - lum(down)),
+        ...[0, 1, 2].flatMap((channel) => [
+          Math.abs(data[k + channel] - data[up + channel]),
+          Math.abs(data[k + channel] - data[down + channel]),
+        ]),
       );
       const vivid =
         Math.max(data[k], data[k + 1], data[k + 2]) -
         Math.min(data[k], data[k + 1], data[k + 2]);
       const matched =
         data[k + 3] > 200 &&
-        lum(k) > Math.min(lum(up), lum(down)) &&
+        (lum(k) > Math.min(lum(up), lum(down)) || vivid > 95) &&
         (contrast >= minContrast || (vivid > 95 && contrast > 25));
       if (matched) {
         if (from < 0) from = x;

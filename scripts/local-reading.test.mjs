@@ -17,7 +17,18 @@ function load(name, extra = {}) {
       },
     },
   ).outputText;
-  const c = { exports: {}, Blob, crypto, setTimeout, clearTimeout, ...extra };
+  const c = {
+    exports: {},
+    Blob,
+    crypto,
+    setTimeout,
+    clearTimeout,
+    require: (name) => {
+      if (name === "./price-labels") return load("price-labels");
+      throw Error(name);
+    },
+    ...extra,
+  };
   vm.runInNewContext(code, c);
   return c.exports;
 }

@@ -12,7 +12,7 @@ import {
 } from "@/lib/captures/model";
 import { listCaptures, readCapture, saveCapture } from "@/lib/captures/storage";
 import { imageDataUrl, normalizeImage, screenshot } from "@/lib/captures/image";
-import { readCaptureText } from "@/lib/captures/ocr";
+import { readCaptureText, readPriceLabels } from "@/lib/captures/ocr";
 import {
   detectLocalLinesFromBlob,
   type LocalLine,
@@ -22,6 +22,7 @@ import { LocalReadingEditor } from "./local-reading";
 import {
   validateLocalReading,
   localSummary,
+  applyLabelScan,
   type LocalReading,
 } from "@/lib/captures/local-reading";
 import { WidgetReadingEditor } from "./widget-reading";
@@ -83,6 +84,9 @@ export function CaptureNotebook({
   const [detecting, setDetecting] = useState(false);
   const [localLines, setLocalLines] = useState<LocalLine[]>([]);
   const [localLineStatus, setLocalLineStatus] = useState("Sin procesar");
+  const [labelBusy, setLabelBusy] = useState(false);
+  const [labelStatus, setLabelStatus] = useState("");
+  const labelAbort = useRef<AbortController | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [widgetReading, setWidgetReading] =
     useState<WidgetReadingBundle | null>(null);
@@ -107,6 +111,7 @@ export function CaptureNotebook({
     return () => {
       alive.current = false;
       ocrAbort.current?.abort();
+      labelAbort.current?.abort();
     };
   }, []);
   useEffect(() => {
@@ -133,6 +138,7 @@ export function CaptureNotebook({
   }
   function close() {
     ocrAbort.current?.abort();
+    labelAbort.current?.abort();
     setOpen(false);
     opener.current?.focus();
   }
@@ -155,6 +161,7 @@ export function CaptureNotebook({
     draftStarted.current = true;
     draftSaved.current = false;
     ocrAbort.current?.abort();
+    labelAbort.current?.abort();
     imageGeneration.current++;
     historyGeneration.current++;
     setRecord(null);
@@ -170,6 +177,8 @@ export function CaptureNotebook({
     setLocalDirty(false);
     setLocalLineStatus("Sin procesar");
     setDetecting(false);
+    setLabelBusy(false);
+    setLabelStatus("");
     setWidgetReading(null);
     setReadingDirty(false);
     setMessage("");
@@ -195,10 +204,13 @@ export function CaptureNotebook({
     setWidgetReading(null);
     setReadingDirty(false);
     ocrAbort.current?.abort();
+    labelAbort.current?.abort();
     setOcrText("");
     setLocalLines([]);
     setLocalReading(null);
     setLocalDirty(false);
+    setLabelBusy(false);
+    setLabelStatus("");
     setDetecting(true);
     setLocalLineStatus("Procesando geometría local...");
     let normalized;
@@ -217,7 +229,7 @@ export function CaptureNotebook({
       const found = await detectLocalLinesFromBlob(normalized.image);
       if (!alive.current || generation !== imageGeneration.current) return;
       setLocalLines(found);
-      setLocalReading({
+      const initialReading: LocalReading = {
         version: 1,
         width: normalized.width,
         height: normalized.height,
@@ -229,7 +241,9 @@ export function CaptureNotebook({
           classification: "reference",
           estimatedPrice: null,
         })),
-      });
+      };
+      setLocalReading(initialReading);
+      if (found.length) void scanLabels(normalized, generation, initialReading);
       setLocalLineStatus(
         found.length
           ? found.length +
@@ -244,6 +258,61 @@ export function CaptureNotebook({
     } finally {
       if (alive.current && generation === imageGeneration.current)
         setDetecting(false);
+    }
+  }
+  async function scanLabels(
+    source: { image: Blob; width: number; height: number },
+    generation: number,
+    initialReading: LocalReading | null = localReading,
+  ) {
+    if (!initialReading) return;
+    labelAbort.current?.abort();
+    const controller = new AbortController();
+    labelAbort.current = controller;
+    setLabelBusy(true);
+    setLabelStatus(
+      "Leyendo etiquetas de precio en este navegador… La primera lectura descarga el motor OCR.",
+    );
+    setDraft((previous) => ({ ...previous, reviewed: false }));
+    try {
+      const scan = await readPriceLabels(
+        source.image,
+        source.width,
+        source.height,
+        controller.signal,
+        initialReading.candidates,
+      );
+      if (
+        !alive.current ||
+        generation !== imageGeneration.current ||
+        controller.signal.aborted ||
+        labelAbort.current !== controller
+      )
+        return;
+      setLocalReading((previous) =>
+        applyLabelScan(previous ?? initialReading, scan),
+      );
+      setLabelStatus(
+        "Lectura terminada. Revisá precios y etiquetas originales; una asociación no confirma el nivel.",
+      );
+    } catch {
+      if (
+        alive.current &&
+        generation === imageGeneration.current &&
+        labelAbort.current === controller
+      )
+        setLabelStatus(
+          controller.signal.aborted
+            ? "Lectura de etiquetas cancelada. Podés reintentar o usar revisión manual."
+            : "No se pudieron leer las etiquetas. La captura se conserva; podés reintentar, corregir precios o calibrar manualmente.",
+        );
+    } finally {
+      if (
+        alive.current &&
+        generation === imageGeneration.current &&
+        labelAbort.current === controller
+      )
+        setLabelBusy(false);
     }
   }
   async function capture() {
@@ -315,6 +384,7 @@ export function CaptureNotebook({
   async function ocr() {
     if (!image) return;
     ocrAbort.current?.abort();
+    labelAbort.current?.abort();
     const controller = new AbortController();
     ocrAbort.current = controller;
     const generation = imageGeneration.current;
@@ -368,6 +438,10 @@ export function CaptureNotebook({
     setBusy(true);
     setMessage("");
     try {
+      if (labelBusy)
+        throw new Error(
+          "Esperá o cancelá la lectura de etiquetas antes de guardar.",
+        );
       if (detecting)
         throw new Error(
           "Esperá a que termine la detección local antes de guardar.",
@@ -409,7 +483,7 @@ export function CaptureNotebook({
     }
   }
   async function showHistory() {
-    if (readingDirty || localDirty || detecting) {
+    if (readingDirty || localDirty || detecting || labelBusy) {
       setMessage(
         "Validá o descartá los cambios de lectura pendientes antes de abrir el histórico.",
       );
@@ -471,6 +545,10 @@ export function CaptureNotebook({
           : null);
       if (!snapshot)
         throw new Error("No hay una captura revisada para exportar.");
+      if (!record && labelBusy)
+        throw new Error(
+          "Esperá o cancelá la lectura de etiquetas antes de exportar.",
+        );
       if (!record && detecting)
         throw new Error("Esperá a que termine la detección local.");
       if (!record && localDirty)
@@ -835,6 +913,35 @@ export function CaptureNotebook({
                         : "La detección no identifica indicadores ni confirma niveles."}
                     </p>
                   ) : null}
+                  {!record ? (
+                    <div>
+                      <p role="status">{labelStatus}</p>
+                      <button
+                        type="button"
+                        disabled={
+                          busy ||
+                          detecting ||
+                          labelBusy ||
+                          !image ||
+                          !localReading
+                        }
+                        onClick={() => {
+                          if (image)
+                            void scanLabels(image, imageGeneration.current);
+                        }}
+                      >
+                        Reintentar lectura de precios
+                      </button>
+                      {labelBusy ? (
+                        <button
+                          type="button"
+                          onClick={() => labelAbort.current?.abort()}
+                        >
+                          Cancelar lectura de precios
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <LocalReadingEditor
                     key={record?.id ?? preview}
                     src={preview}
@@ -844,7 +951,7 @@ export function CaptureNotebook({
                     value={
                       record ? (record.localReading ?? null) : localReading
                     }
-                    readOnly={Boolean(record) || detecting}
+                    readOnly={Boolean(record) || detecting || labelBusy}
                     onDirty={(dirty) => {
                       setLocalDirty(dirty);
                       setDraft((previous) => ({

@@ -1,3 +1,9 @@
+import {
+  matchPriceLabels,
+  validatePriceLabel,
+  type PriceLabel,
+  type LabelScan,
+} from "./price-labels";
 import type { LocalLine } from "./local-lines";
 export type Region = { x1: number; y1: number; x2: number; y2: number };
 export type Calibration = {
@@ -12,10 +18,13 @@ export type LocalCandidate = LocalLine & {
   decision: "pending" | "rejected" | "accepted";
   classification: "support" | "resistance" | "reference";
   estimatedPrice: number | null;
+  ocrLabel?: PriceLabel;
+  correctedPrice?: number;
 };
 export type LocalReading = {
   version: 1;
   summary?: string;
+  labelScan?: LabelScan;
   width: number;
   height: number;
   calibration: Calibration | null;
@@ -99,6 +108,49 @@ export function calibrate(
       })),
   };
 }
+export function candidatePrice(l: LocalCandidate): number | null {
+  return l.correctedPrice ?? l.ocrLabel?.price ?? l.estimatedPrice;
+}
+export function candidateOrigin(l: LocalCandidate): string {
+  return l.correctedPrice !== undefined
+    ? "Corrección manual"
+    : l.ocrLabel?.price !== null && l.ocrLabel?.price !== undefined
+      ? "Etiqueta OCR (revisar)"
+      : l.estimatedPrice !== null
+        ? "Estimación por eje"
+        : "Sin precio legible";
+}
+export function applyLabelScan(v: LocalReading, scan: LabelScan): LocalReading {
+  const reserved = v.candidates.flatMap((l) =>
+    l.ocrLabel ? [l.ocrLabel] : [],
+  );
+  const available = scan.labels.filter(
+    (label) =>
+      !reserved.some(
+        (old) =>
+          old.raw === label.raw &&
+          Math.abs(old.bbox.y0 - label.bbox.y0) < 4 &&
+          Math.abs(old.bbox.x0 - label.bbox.x0) < 4,
+      ),
+  );
+  const matches = matchPriceLabels(v.candidates, available, v.width, v.height);
+  return {
+    ...v,
+    summary: undefined,
+    labelScan: scan,
+    candidates: v.candidates.map((l, i) => {
+      // Explicit retry cannot overwrite an existing reading, correction or confirmed decision.
+      if (
+        l.ocrLabel ||
+        l.correctedPrice !== undefined ||
+        l.decision !== "pending"
+      )
+        return l;
+      const label = matches.get(i);
+      return label ? { ...l, ocrLabel: label } : l;
+    }),
+  };
+}
 export function validateLocalReading(
   v: LocalReading,
   width: number,
@@ -114,6 +166,31 @@ export function validateLocalReading(
       (typeof v.summary !== "string" || v.summary.length > 10000))
   )
     throw new Error("Lectura local incompatible con la imagen.");
+  if (v.labelScan) {
+    const scan = v.labelScan,
+      b = scan.crop;
+    if (
+      scan.version !== 1 ||
+      !Array.isArray(scan.labels) ||
+      scan.labels.length > 300 ||
+      typeof scan.text !== "string" ||
+      scan.text.length > 30000 ||
+      ![b.x0, b.x1, b.y0, b.y1].every(Number.isFinite) ||
+      b.x0 < 0 ||
+      b.y0 < 0 ||
+      b.x1 > width ||
+      b.y1 > height ||
+      b.x0 >= b.x1 ||
+      b.y0 >= b.y1
+    )
+      throw new Error("Escaneo OCR inválido.");
+    const ids = new Set<string>();
+    for (const label of scan.labels) {
+      validatePriceLabel(label, width, height);
+      if (ids.has(label.id)) throw new Error("Etiqueta OCR duplicada.");
+      ids.add(label.id);
+    }
+  }
   if (v.calibration === undefined)
     throw new Error("Candidatas sin calibración de su panel.");
   if (v.calibration) validateCalibration(v.calibration, width, height);
@@ -143,11 +220,21 @@ export function validateLocalReading(
       l.price !== null
     )
       throw new Error("Candidata local inválida.");
+    if (
+      l.correctedPrice !== undefined &&
+      (!Number.isFinite(l.correctedPrice) || l.correctedPrice <= 0)
+    )
+      throw new Error("Corrección de precio inválida.");
+    if (l.ocrLabel) {
+      validatePriceLabel(l.ocrLabel, width, height);
+      if (!matchPriceLabels([l], [l.ocrLabel], width, height).has(0))
+        throw new Error("Etiqueta fuera de la línea asociada.");
+    }
     ids.add(l.id);
     const expected = v.calibration ? estimatePrice(v.calibration, l.y) : null;
     if (
       l.estimatedPrice !== expected ||
-      (l.decision === "accepted" && expected === null)
+      (l.decision === "accepted" && candidatePrice(l) === null)
     )
       throw new Error("El nivel no coincide con su calibración.");
     if (
@@ -167,8 +254,27 @@ export function formatEstimatedPrice(price: number): string {
 }
 export function localSummary(v: LocalReading): string {
   const accepted = v.candidates.filter((l) => l.decision === "accepted");
-  const prices = accepted
+  const readPrices = accepted
+    .filter(
+      (l) =>
+        l.correctedPrice !== undefined ||
+        (l.ocrLabel?.price !== null && l.ocrLabel?.price !== undefined),
+    )
+    .map(candidatePrice)
+    .filter((p): p is number => p !== null);
+  const estimated = accepted
+    .filter(
+      (l) =>
+        l.correctedPrice === undefined &&
+        (l.ocrLabel?.price === null || l.ocrLabel === undefined),
+    )
     .map((l) => l.estimatedPrice)
     .filter((p): p is number => p !== null);
-  return `${v.candidates.length} candidatas en ${v.calibration?.panel ?? "región sin calibrar"}; ${accepted.length} niveles clasificados por el usuario, ${v.candidates.filter((l) => l.decision === "rejected").length} descartados, ${v.candidates.filter((l) => l.decision === "pending").length} pendientes.${prices.length ? ` Rango estimado revisado: ${formatEstimatedPrice(Math.min(...prices))}–${formatEstimatedPrice(Math.max(...prices))}.` : ""} La geometría no demuestra soportes, resistencias, tendencia ni señales. No se recuperaron OHLC ni indicadores mediante este detector.`;
+  const range = readPrices.length
+    ? ` Rango OCR/corregido revisado: ${Math.min(...readPrices)}–${Math.max(...readPrices)}.`
+    : "";
+  const estimateRange = estimated.length
+    ? ` Rango estimado por eje: ${formatEstimatedPrice(Math.min(...estimated))}–${formatEstimatedPrice(Math.max(...estimated))}.`
+    : "";
+  return `${v.candidates.filter((l) => l.ocrLabel?.price !== null && l.ocrLabel?.price !== undefined).length} etiquetas OCR legibles; ${v.candidates.filter((l) => l.correctedPrice !== undefined).length} correcciones manuales. ${v.candidates.length} candidatas en ${v.calibration?.panel ?? "región sin calibrar"}; ${accepted.length} niveles clasificados por el usuario, ${v.candidates.filter((l) => l.decision === "rejected").length} descartados, ${v.candidates.filter((l) => l.decision === "pending").length} pendientes.${range}${estimateRange} Las etiquetas leídas requieren revisión y no equivalen a cotizaciones verificadas. La geometría no demuestra soportes, resistencias, tendencia ni señales. No se recuperaron OHLC ni indicadores mediante este detector.`;
 }
