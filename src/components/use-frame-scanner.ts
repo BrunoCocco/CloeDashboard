@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { AxisReader, type FrameReading } from '@/lib/chart-editor/ocr';
 import { FrameGate, releaseCapture } from '@/lib/chart-editor/frame-gate';
 type Session={stream:MediaStream;video:HTMLVideoElement;reader:AxisReader;controller:AbortController;gate:FrameGate;timer:ReturnType<typeof setTimeout>|null;paused:boolean;referenceId:string};
@@ -7,6 +7,12 @@ export function useFrameScanner(target:RefObject<HTMLDivElement|null>,referenceI
   const session=useRef<Session|null>(null);
   const imageJob=useRef<{reader:AxisReader;controller:AbortController;gate:FrameGate;referenceId:string}|null>(null);
   const [latest,setLatest]=useState<FrameReading|null>(null);
+  const accepted=useRef<{frame:FrameReading;session:Session;lease:ReturnType<FrameGate['lease']>;width:number;height:number}|null>(null);
+  function clearLatest(){accepted.current=null;setLatest(null);}
+  function getLatest(){
+    const reading=accepted.current,s=session.current,context=currentContext.current,bounds=target.current?.getBoundingClientRect();
+    return reading&&bounds?.width===reading.width&&bounds.height===reading.height&&s===reading.session&&s.gate.accepts(reading.lease,context.referenceId)&&context.live&&!s.paused&&!document.hidden?reading.frame:null;
+  }
   const [status,setStatus]=useState('Sin lectura automática.');
   const [capturing,setCapturing]=useState(false);
   const [scanning,setScanning]=useState(false);
@@ -15,24 +21,25 @@ export function useFrameScanner(target:RefObject<HTMLDivElement|null>,referenceI
   const currentContext=useRef({referenceId,live});
   function advanceGeneration(){generation.current++;}
   function close(s:Session){releaseCapture(s);}
-  function stop(){advanceGeneration();const s=session.current;session.current=null;if(s)close(s);imageJob.current?.controller.abort();imageJob.current?.gate.dispose();void imageJob.current?.reader.dispose();imageJob.current=null;setCapturing(false);setScanning(false);setLatest(null);setStatus('Captura detenida; las escenas congeladas conservan su evidencia.');}
+  function stop(){advanceGeneration();const s=session.current;session.current=null;if(s)close(s);imageJob.current?.controller.abort();imageJob.current?.gate.dispose();void imageJob.current?.reader.dispose();imageJob.current=null;setCapturing(false);setScanning(false);clearLatest();setStatus('Captura detenida; las escenas congeladas conservan su evidencia.');}
   useEffect(()=>{
     alive.current=true;
     return()=>{alive.current=false;advanceGeneration();const s=session.current;session.current=null;if(s)close(s);imageJob.current?.gate.dispose();imageJob.current?.controller.abort();void imageJob.current?.reader.dispose();};
   },[]);
-  useEffect(()=>{
+  useLayoutEffect(()=>{
     currentContext.current={referenceId,live};
     const s=session.current;if(s){s.paused=!live;s.referenceId=referenceId;s.gate.invalidate();}
-    queueMicrotask(()=>{if(alive.current)setLatest(null);});
+    queueMicrotask(()=>{if(alive.current)clearLatest();});
     if(imageJob.current&&imageJob.current.referenceId!==referenceId)imageJob.current.gate.invalidate();
   },[live,referenceId]);
   useEffect(()=>{
     const element=target.current;if(!element)return;
-    const invalidate=()=>{const s=session.current;if(s){s.gate.invalidate();setLatest(null);setStatus('Geometría/navegación cambiada: esperando otro frame.');}};
+    const invalidate=()=>{const s=session.current;if(s){s.gate.invalidate();clearLatest();setStatus('Geometría/navegación cambiada: esperando otro frame.');}};
     const observer=new ResizeObserver(invalidate);observer.observe(element);
     const visibility=()=>{if(document.hidden)invalidate();};
     document.addEventListener('visibilitychange',visibility);
-    return()=>{observer.disconnect();document.removeEventListener('visibilitychange',visibility);};
+    window.addEventListener('blur',invalidate);
+    return()=>{observer.disconnect();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('blur',invalidate);};
   },[target]);
   async function start() {
     stop();
@@ -61,33 +68,37 @@ export function useFrameScanner(target:RefObject<HTMLDivElement|null>,referenceI
       track.addEventListener('ended',()=>{if(session.current===s){stop();setStatus('El navegador terminó la captura.');}},{once:true});
       const tick=async()=>{
         if(session.current!==s||!alive.current)return;
+        let lease:ReturnType<FrameGate['lease']>|null=null;
         try {
           if(s.paused||document.hidden){s.timer=setTimeout(tick,1000);return;}
-          s.gate.invalidate();setLatest(null);setScanning(true);setStatus('Escaneando eje de un frame local…');
-          const lease=s.gate.lease(s.referenceId),rect=element.getBoundingClientRect();
+          s.gate.invalidate();clearLatest();setScanning(true);setStatus('Escaneando eje de un frame local…');
+          lease=s.gate.lease(s.referenceId);const rect=element.getBoundingClientRect();
           const w=video.videoWidth,h=video.videoHeight;
           if(!w||!h||Math.abs(w/h-rect.width/rect.height)>.04)throw new Error('El recorte no coincide con el gráfico. Seleccioná la pestaña actual y reintentá.');
           const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d')!.drawImage(video,0,0);
           const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('No se pudo obtener el frame.')),'image/png'));
           const frame=await s.reader.scan(blob,'current-tab-region',s.controller.signal);
-          if(session.current===s&&s.gate.accepts(lease,s.referenceId)&&!s.paused&&!document.hidden){setLatest(frame);setStatus(frame.scale.fit?`Frame validado ${new Date(frame.timestamp).toLocaleTimeString()} · ${frame.scale.reason}. Dibujar lo congela.`:frame.scale.reason);}
-        }catch(e){if(session.current===s&&!s.paused){setLatest(null);setStatus(e instanceof Error?e.message:'Error de captura.');session.current=null;close(s);setCapturing(false);}}
-        finally{if(alive.current)setScanning(false);}
+          if(session.current===s&&s.gate.accepts(lease,s.referenceId)&&!s.paused&&!document.hidden){accepted.current={frame,session:s,lease,width:rect.width,height:rect.height};setLatest(frame);setStatus(frame.scale.fit?`Frame validado ${new Date(frame.timestamp).toLocaleTimeString()} · ${frame.scale.reason}. Dibujar lo congela.`:frame.scale.reason);}
+        }catch(e){if(session.current===s&&!s.paused&&lease&&s.gate.accepts(lease,s.referenceId)){setScanning(false);clearLatest();setStatus(e instanceof Error?e.message:'Error de captura.');session.current=null;close(s);setCapturing(false);}}
+        finally{if(alive.current&&session.current===s&&!imageJob.current)setScanning(false);}
         if(session.current===s)s.timer=setTimeout(tick,4000);
       };
       void tick();
     }catch(e){stream?.getTracks().forEach(t=>t.stop());if(current()){setStatus(e instanceof Error?e.message:'Captura cancelada.');setCapturing(false);}}
   }
   async function scanImage(blob:Blob,id:string) {
-    const previous=imageJob.current;previous?.controller.abort();previous?.gate.dispose();if(previous)await previous.reader.dispose();
+    // Reserve ownership before any await: a later upload or stop always wins.
+    const previous=imageJob.current;
     const job={reader:new AxisReader(),controller:new AbortController(),gate:new FrameGate(),referenceId:id};imageJob.current=job;
-    const s=session.current;if(s){s.paused=true;s.gate.invalidate();s.controller.abort();await s.reader.dispose();s.reader=new AxisReader();s.controller=new AbortController();}
+    previous?.controller.abort();previous?.gate.dispose();void previous?.reader.dispose();
+    const s=session.current;if(s){s.paused=true;s.gate.invalidate();}
+    clearLatest();
     setScanning(true);setStatus('Leyendo automáticamente el eje de la imagen…');
     const lease=job.gate.lease(id);
-    try {const frame=await job.reader.scan(blob,'local-image',job.controller.signal);if(imageJob.current!==job||!alive.current||!job.gate.accepts(lease,id))return null;setStatus(frame.scale.reason);return frame;}
-    catch(e){if(imageJob.current===job&&alive.current)setStatus(e instanceof Error?e.message:'No se pudo leer la imagen.');return null;}
+    try {const frame=await job.reader.scan(blob,'local-image',job.controller.signal);if(imageJob.current!==job||!alive.current||!job.gate.accepts(lease,id))return null;if(currentContext.current.referenceId!==id)return null;setStatus(frame.scale.reason);return frame;}
+    catch(e){if(imageJob.current===job&&alive.current&&job.gate.accepts(lease,currentContext.current.referenceId))setStatus(e instanceof Error?e.message:'No se pudo leer la imagen.');return null;}
     finally{void job.reader.dispose();if(imageJob.current===job){imageJob.current=null;if(alive.current)setScanning(false);}}
   }
-  function invalidate(){const s=session.current;if(s)s.gate.invalidate();imageJob.current?.gate.invalidate();setLatest(null);}
-  return {latest,status,capturing,scanning,start,stop,scanImage,invalidate};
+  function invalidate(){const s=session.current;if(s)s.gate.invalidate();imageJob.current?.gate.invalidate();clearLatest();}
+  return {latest,getLatest,status,capturing,scanning,start,stop,scanImage,invalidate};
 }

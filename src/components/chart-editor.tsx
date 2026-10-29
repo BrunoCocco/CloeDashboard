@@ -107,7 +107,7 @@ export function ChartEditor({userId,captureTargetRef}:{userId:string;captureTarg
     updateScene(s=>calibrateScene(s,c));setMessage('Calibración manual aplicada. Los precios son estimaciones.');setTool('select');
   }
   function freezeLatest(){
-    const frame=scanner.latest;
+    const frame=scanner.getLatest();
     if(!frame?.scale.fit)return false;
     liveSceneId.current=scene?.reference.id??null;
     const next=applyFrameReading(newScene({id:crypto.randomUUID(),kind:'capture',createdAt:frame.timestamp,image:frame.image,imageWidth:frame.width,imageHeight:frame.height,name:'Frame congelado de pestaña actual'}),frame);

@@ -60,7 +60,7 @@ Importar JSON restaura el trabajo. Exportar JSON + capturas permite conservarlo 
 ### Verificación reproducible
 
 ```bash
-node --test scripts/chart-editor.test.mjs scripts/chart-vision.test.mjs
+node --test scripts/chart-editor.test.mjs scripts/chart-vision.test.mjs scripts/frame-scanner.test.mjs
 TESSDATA_PATH=/ruta/a/tessdata node scripts/chart-vision-ocr-check.mjs
 npm run lint
 npm run build
@@ -69,3 +69,5 @@ npm run build
 El segundo comando ejecuta **Tesseract.js real**, con `eng.traineddata` local sin comprimir, sobre `scripts/fixtures/axis-candles-synthetic.png`. Esa fixture independiente es **sintética**, no una captura real de TradingView: 1600×900, cinco etiquetas de precio, tres de RSI y 30 velas de colores estándar. La prueba real reconoce ocho etiquetas (confianza 94–96), conserva cinco del precio, rechaza tres de RSI y encuentra 30 candidatas con sus centros x correctos. En y=400, verdad sintética=100000; estimación≈100033.33 con incertidumbre≈233.33, que cubre el offset entre glifo y tick. Esto demuestra el flujo sobre esa fixture, no rendimiento validado en capturas reales.
 
 Pruebas unitarias cubren parsing, escalas lineal/log, outliers, ambigüedad, rango/panel, incertidumbre, segmentación RGBA, referencias, historial y rechazo de carreras por revisión/teardown. Build/tipado y lint se verifican antes de publicar la rama. **No se verificó aún el selector Region Capture en un navegador real ni una captura real de TradingView**; el runtime no dispone de Chromium y su descarga oficial falló por ZIP vacío/truncado. Esas validaciones quedan explícitamente pendientes al probar la vista previa.
+
+El harness `scripts/frame-scanner.test.mjs` comprueba el hook con ciclo React, DOM, captura y OCR simulados: pérdida de foco, resize antes del observador, cambios A→B→A, imágenes concurrentes, stop y resultados/errores tardíos. No es una prueba de navegador. El detalle y el flujo nativo pendiente están en [CHART_EDITOR_VERIFICATION.md](docs/CHART_EDITOR_VERIFICATION.md).
