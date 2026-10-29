@@ -4,13 +4,13 @@ export type Calibration = { source: 'manual-two-points'; referenceSize?: {width:
 export type Reference = { id: string; kind: 'live' | 'capture'; createdAt: string; image?: string; imageWidth?: number; imageHeight?: number; name?: string };
 export type CalibrationEvent = { at: string; action: 'applied' | 'invalidated'; calibration: Calibration | null; reason: string | null };
 export type Scene = { calibrationHistory: CalibrationEvent[]; reference: Reference; drawings: Drawing[]; calibration: Calibration | null; invalidationReason: string | null };
-export type EditorDocument = { version: 1; symbol: 'BINANCE:BTCUSDT'; initialTimeframe: 'W'; timeframeVerified: false; scenes: Scene[]; activeId: string };
+export type EditorDocument = { version: 1; symbol: 'BINANCE:BTCUSDT'; symbolVerified: false; initialTimeframe: 'W'; timeframeVerified: false; scenes: Scene[]; activeId: string };
 export function newScene(reference?: Reference): Scene {
   return { calibrationHistory: [], reference: reference ?? { id: crypto.randomUUID(), kind: 'live', createdAt: new Date().toISOString() }, drawings: [], calibration: null, invalidationReason: null };
 }
 export function newDocument(): EditorDocument {
   const scene = newScene();
-  return { version: 1, symbol: 'BINANCE:BTCUSDT', initialTimeframe: 'W', timeframeVerified: false, scenes: [scene], activeId: scene.reference.id };
+  return { version: 1, symbol: 'BINANCE:BTCUSDT', symbolVerified: false, initialTimeframe: 'W', timeframeVerified: false, scenes: [scene], activeId: scene.reference.id };
 }
 export function validateCalibration(c: Calibration): string | null {
   if (!c || !['linear','log'].includes(c.scale) || c.source!=='manual-two-points' || !Array.isArray(c.anchors) || c.anchors.length!==2 || !c.anchors[0] || !c.anchors[1]) return 'Calibración no válida.';
@@ -59,6 +59,6 @@ export function restoreDocument(raw:string): EditorDocument | null {
       if(s.calibration && validateCalibration(s.calibration)) return null;
       if(s.reference.kind==='live') Object.assign(s,invalidateScene(s,'Vista viva restaurada: recalibrá antes de estimar precios.'));
     }
-    return doc;
+    return {...doc,symbolVerified:false,timeframeVerified:false};
   } catch {return null;}
 }
