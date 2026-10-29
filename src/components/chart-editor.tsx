@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { calibrateScene, invalidateScene, estimatePrice, fitImage, newDocument, newScene, restoreDocument, serializeDocument, validateCalibration, type Calibration, type Drawing, type EditorDocument, type Point, type Scene } from '@/lib/chart-editor/model';
+import { useEffect, useRef, useState, type PointerEvent, type RefObject } from 'react';
+import { applyFrameReading, calibrateScene, invalidateScene, estimatePrice, fitImage, newDocument, newScene, restoreDocument, serializeDocument, validateCalibration, type Calibration, type Drawing, type EditorDocument, type Point, type Scene } from '@/lib/chart-editor/model';
+import { useFrameScanner } from './use-frame-scanner';
 import styles from './chart-editor.module.css';
 
 type Tool = 'navigate' | 'select' | 'segment' | 'horizontal' | 'freehand' | 'calibrate';
@@ -10,13 +11,15 @@ function download(text:string,type:string,name:string) {
   const url=URL.createObjectURL(new Blob([text],{type}));
   const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-export function ChartEditor({userId}:{userId:string}) {
+export function ChartEditor({userId,captureTargetRef}:{userId:string;captureTargetRef:RefObject<HTMLDivElement|null>}) {
   const [doc,setDoc]=useState<EditorDocument|null>(null);
   const [tool,setTool]=useState<Tool>('navigate');
   const [selected,setSelected]=useState<string|null>(null);
   const [draft,setDraft]=useState<Drawing|null>(null);
   const [message,setMessage]=useState('');
   const [panel,setPanel]=useState(false);
+  const [showCandles,setShowCandles]=useState(false);
+  const liveSceneId=useRef<string|null>(null);
   const [size,setSize]=useState({width:0,height:0});
   const [anchors,setAnchors]=useState<[number|null,number|null]>([null,null]);
   const [prices,setPrices]=useState<[string,string]>(['','']);
@@ -26,6 +29,7 @@ export function ChartEditor({userId}:{userId:string}) {
   const svgRef=useRef<SVGSVGElement>(null);
   const storageKey=`cloe-chart-editor:v1:${userId}`;
   const scene=doc?.scenes.find(s=>s.reference.id===doc.activeId);
+  const scanner=useFrameScanner(captureTargetRef,scene?.reference.id??'',scene?.reference.kind==='live');
 
   function updateScene(update:(scene:Scene)=>Scene) {
     setDoc(d=>d?{...d,scenes:d.scenes.map(s=>s.reference.id===d.activeId?update(s):s)}:d);
@@ -63,7 +67,10 @@ export function ChartEditor({userId}:{userId:string}) {
   },[]);
 
   function changeTool(next:Tool) {
-    if(next==='navigate')invalidate('Navegación activada: la escala de TradingView puede cambiar. Recalibrá.');
+    if(next==='navigate'){scanner.invalidate();invalidate('Navegación activada: la escala de TradingView puede cambiar. Reescanear.');if(scene?.reference.kind==='capture'&&liveSceneId.current)setDoc(d=>d?{...d,activeId:liveSceneId.current!}:d);}
+    if(['segment','horizontal','freehand'].includes(next)&&scene?.reference.kind==='live'&&scanner.capturing){
+      if(!freezeLatest()){setMessage('Esperá una lectura válida y reciente del eje; dibujar congelará automáticamente ese frame.');return;}
+    }
     setTool(next);setDraft(null);
     if(next==='calibrate')setPanel(true);
   }
@@ -93,10 +100,23 @@ export function ChartEditor({userId}:{userId:string}) {
     updateScene(s=>({...s,drawings:[...s.drawings,completed]}));setSelected(completed.id);setDraft(null);
   }
   function applyCalibration() {
+    if(scene?.reference.kind!=='capture'){setMessage('Congelá o cargá una imagen antes de calibrar: la escala viva puede cambiar.');return;}
     if(anchors[0]===null||anchors[1]===null||!prices[0].trim()||!prices[1].trim()){setMessage('Marcá las dos alturas y escribí ambos precios sin separadores de miles.');return;}
     const c:Calibration={source:'manual-two-points',referenceSize:{width:rect.width,height:rect.height},scale,anchors:[{y:anchors[0],price:Number(prices[0])},{y:anchors[1],price:Number(prices[1])}],createdAt:new Date().toISOString()};
     const error=validateCalibration(c);if(error){setMessage(error);return;}
     updateScene(s=>calibrateScene(s,c));setMessage('Calibración manual aplicada. Los precios son estimaciones.');setTool('select');
+  }
+  function freezeLatest(){
+    const frame=scanner.latest;
+    if(!frame?.scale.fit)return false;
+    liveSceneId.current=scene?.reference.id??null;
+    const next=applyFrameReading(newScene({id:crypto.randomUUID(),kind:'capture',createdAt:frame.timestamp,image:frame.image,imageWidth:frame.width,imageHeight:frame.height,name:'Frame congelado de pestaña actual'}),frame);
+    setDoc(d=>d?{...d,scenes:[...d.scenes,next],activeId:next.reference.id}:d);setSelected(null);setAnchors([null,null]);setPrices(['','']);setMessage('Frame congelado con escala OCR estimada. Los precios corresponden exclusivamente a esta imagen.');return true;
+  }
+  async function analyzeScene(id:string,image:string){
+    const frame=await scanner.scanImage(await(await fetch(image)).blob(),id);
+    if(!frame)return;
+    setDoc(d=>d&&d.activeId===id?{...d,scenes:d.scenes.map(s=>s.reference.id===id?applyFrameReading(s,frame):s)}:d);
   }
   async function loadImage(file:File) {
     if(!file.type.startsWith('image/')){setMessage('Seleccioná una imagen del gráfico.');return;}
@@ -110,16 +130,17 @@ export function ChartEditor({userId}:{userId:string}) {
       const data=canvas.toDataURL('image/jpeg',0.88);
       if(data.length>3*1024*1024){setMessage('Captura demasiado grande para guardar localmente; reducí la resolución.');return;}
       const next=newScene({id:crypto.randomUUID(),kind:'capture',image:data,imageWidth:canvas.width,imageHeight:canvas.height,name:file.name,createdAt:new Date().toISOString()});
-      setDoc(d=>d?{...d,scenes:[...d.scenes,next],activeId:next.reference.id}:d);setAnchors([null,null]);setPrices(['','']);setSelected(null);setTool('select');setMessage('Nueva captura congelada. Activo y temporalidad de la imagen no verificados; calibración independiente.');
+      setDoc(d=>d?{...d,scenes:[...d.scenes,next],activeId:next.reference.id}:d);setAnchors([null,null]);setPrices(['','']);setSelected(null);setTool('select');setMessage('Captura congelada. Escaneando eje sin introducir precios; activo y temporalidad no verificados.');void analyzeScene(next.reference.id,data);
     }catch{setMessage('No se pudo abrir esa imagen. Probá PNG o JPEG.');}
   }
   async function importJson(file:File) {
     if(file.size>20*1024*1024){setMessage('El JSON supera 20 MB.');return;}
+    scanner.invalidate();
     try {const restored=restoreDocument(await file.text());if(!restored){setMessage('Documento no válido o versión no compatible.');return;}setDoc(restored);setTool('select');setSelected(null);setDraft(null);setAnchors([null,null]);setPrices(['','']);setMessage('Documento restaurado en este dispositivo. Las vistas vivas requieren nueva calibración.');}
     catch{setMessage('No se pudo leer el JSON.');}
   }
   function newLive() {
-    const next=newScene();setDoc(d=>d?{...d,scenes:[...d.scenes,next],activeId:next.reference.id}:d);setAnchors([null,null]);setPrices(['','']);setSelected(null);setTool('navigate');
+    scanner.invalidate();liveSceneId.current=null;const next=newScene();setDoc(d=>d?{...d,scenes:[...d.scenes,next],activeId:next.reference.id}:d);setAnchors([null,null]);setPrices(['','']);setSelected(null);setTool('navigate');
   }
   function exportSvg() {
     if(!svgRef.current||!doc)return;
@@ -131,7 +152,7 @@ export function ChartEditor({userId}:{userId:string}) {
   const activeDrawing=scene?.drawings.find(d=>d.id===selected);
   function reading(p:Point) {
     const result=estimatePrice(p.y,scene?.calibration??null);
-    return `x ${(p.x*100).toFixed(2)}% · y ${(p.y*100).toFixed(2)}% · ${(p.y*rect.height).toFixed(1)} px${result?` · ≈ ${result.price.toFixed(2)} USDT${result.extrapolated?' (extrapolado)':''}`:' · sin precio calibrado'}`;
+    return result?`≈ ${result.price.toLocaleString('es-ES',{maximumFractionDigits:2})}${result.errorPrice?` ± ${Math.ceil(result.errorPrice).toLocaleString('es-ES')} (incertidumbre visual)`:''}${result.extrapolated?' (extrapolado manual)':''}`:'Precio no disponible para este punto (escala/rango sin validar)';
   }
   return <div ref={rootRef} className={styles.root}>
     {reference?.kind==='capture'?<div className={styles.backdrop}/>:null}
@@ -141,32 +162,39 @@ export function ChartEditor({userId}:{userId:string}) {
       {reference?.kind==='capture'?<img src={reference.image} alt="Captura local de referencia congelada" draggable={false}/>:null}
       <svg ref={svgRef} className={styles.overlay} style={{pointerEvents:tool==='navigate'?'none':'auto',touchAction:tool==='navigate'?'auto':'none'}} viewBox="0 0 1 1" preserveAspectRatio="none" aria-label="Capa de dibujos propios" onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={()=>setDraft(null)}>
         {[...(scene?.drawings??[]),...(draft?[draft]:[])].map(d=><polyline key={d.id} points={d.points.map(p=>`${p.x},${p.y}`).join(' ')} fill="none" stroke={d.id===selected?'#facc15':'#22d3ee'} strokeWidth={d.id===selected?4:3} vectorEffect="non-scaling-stroke" style={{cursor:tool==='select'?'pointer':undefined,pointerEvents:tool==='select'?'stroke':'none'}} onPointerDown={e=>{if(tool==='select'){e.stopPropagation();setSelected(d.id);setPanel(true);}}}/>)}
+        {scene?.reference.kind==='capture'?scene.drawings.map(d=>{const p=d.points.at(-1)!;const estimate=estimatePrice(p.y,scene.calibration);return estimate?<text key={`price-${d.id}`} transform={`translate(${Math.min(.72,p.x)},${Math.max(.025,p.y)}) scale(${1/Math.max(1,rect.width)},${1/Math.max(1,rect.height)})`} x="6" y="-7" fontSize="12" fontFamily="monospace" fill="#fff" stroke="#111827" strokeWidth="3" paintOrder="stroke" pointerEvents="none">≈ {estimate.price.toLocaleString('es-ES',{maximumFractionDigits:2})}{estimate.errorPrice?` ±${Math.ceil(estimate.errorPrice)}`:''}</text>:null;}):null}
+        {showCandles&&scene?.reference.kind==='capture'?scene.candleCandidates?.flatMap(c=>(['high','low','open','close'] as const).map(key=><g key={`${c.id}-${key}`} transform={`translate(${c.x/(reference?.imageWidth??1)},${c[key]/(reference?.imageHeight??1)}) scale(${1/Math.max(1,rect.width)},${1/Math.max(1,rect.height)})`} pointerEvents="none"><circle r="3" fill={key==='high'?'#a78bfa':key==='low'?'#f59e0b':'#fff'}/><text x="6" y={key==='open'?12:-5} fontSize="10" fontFamily="monospace" fill="#e9d5ff" stroke="#111827" strokeWidth="2" paintOrder="stroke">{key[0].toUpperCase()} {c.prices[key]?`≈${Math.round(c.prices[key]!.price)}`:'?'}</text></g>)):null}
         {tool==='calibrate'?anchors.map((y,i)=>y!==null?<line key={i} x1="0" x2="1" y1={y} y2={y} stroke={i===0?'#fb7185':'#a78bfa'} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeDasharray="6 4" pointerEvents="none"/>:null):null}
       </svg>
     </div>
     <div className={styles.controls}>
       <div className={styles.toolbar} role="toolbar" aria-label="Editor transparente">
+        <button onClick={()=>{setPanel(false);changeTool('navigate');void scanner.start();}} disabled={scanner.capturing}>Activar escala automática</button>
+        {scanner.capturing?<button onClick={scanner.stop}>Detener captura</button>:null}
+        {scanner.latest?.scale.fit&&scene?.reference.kind==='live'?<button onClick={()=>{if(freezeLatest())setTool('select');}}>Congelar frame leído</button>:null}
         {names.map(([value,label])=><button key={value} aria-pressed={tool===value} onClick={()=>changeTool(value)}>{label}</button>)}
         <button onClick={()=>updateScene(s=>({...s,drawings:s.drawings.slice(0,-1)}))} disabled={!scene?.drawings.length}>Deshacer</button>
         <button onClick={()=>{updateScene(s=>({...s,drawings:s.drawings.filter(d=>d.id!==selected)}));setSelected(null);}} disabled={!selected}>Borrar</button>
         <button aria-expanded={panel} onClick={()=>setPanel(!panel)}>{panel?'Ocultar datos':'Datos / captura'}</button>
       </div>
-      <p className={styles.badge}>Dibujos anclados a {reference?.kind==='capture'?'captura fija':'pantalla viva'} · {scene?.calibration?'calibración manual activa (estimaciones)':'SIN calibración de precio'}</p>
+      <p className={styles.badge}>Dibujos anclados a {reference?.kind==='capture'?'captura fija':'pantalla viva'} · {scene?.calibration?`${scene.calibration.source==='local-ocr-axis'?'OCR local':'manual'} · PRECIOS ESTIMADOS`:'SIN precios validados'} · {scanner.status}</p>
       {panel?<section className={styles.panel} aria-label="Datos del editor">
         <strong>Editor propio · {reference?.kind==='capture'?'captura fija':'TradingView vivo'}</strong>
-        <p>Inicio: BTCUSDT · semanal. No podemos leer cambios de escala/temporalidad ni dibujos dentro de TradingView. Esta capa guarda coordenadas de pantalla; no sigue velas. Sin OCR automático.</p>
+        <p>Inicio: BTCUSDT · semanal. No podemos leer cambios de escala/temporalidad ni dibujos dentro de TradingView. El OCR local estima la escala del eje. Para dibujar con precios en vivo se congela automáticamente el frame leído; los trazos no siguen velas ni representan OHLC de un feed.</p>
         <div className={styles.row}><label className={styles.upload}>Cargar captura<input type="file" accept="image/*" onChange={e=>{const file=e.target.files?.[0];if(file)void loadImage(file);e.target.value='';}}/></label><button onClick={newLive}>Nueva vista viva</button><label className={styles.upload}>Importar JSON<input type="file" accept="application/json,.json" onChange={e=>{const file=e.target.files?.[0];if(file)void importJson(file);e.target.value='';}}/></label></div>
         <label>Referencia guardada<select value={doc?.activeId??''} onChange={e=>{setDoc(d=>d?{...d,activeId:e.target.value}:d);setAnchors([null,null]);setPrices(['','']);setSelected(null);setDraft(null);setTool('select');invalidate('Cambio de referencia: verificá y recalibrá la vista viva.');}}>{doc?.scenes.map((s,i)=><option key={s.reference.id} value={s.reference.id}>{i+1}. {s.reference.kind==='live'?'Viva':s.reference.name??'Captura'}</option>)}</select></label>
-        <fieldset><legend>Calibración manual de precio (mismo panel, nunca volumen)</legend>
+        {reference?.kind==='capture'?<div className={styles.row}><button disabled={scanner.scanning} onClick={()=>reference.image&&void analyzeScene(reference.id,reference.image)}>Reescanear eje automáticamente</button><button aria-pressed={showCandles} onClick={()=>setShowCandles(!showCandles)}>Velas visuales ({scene?.candleCandidates?.length??0} candidatas)</button></div>:null}
+        <p>En capturas, activo/unidad y temporalidad no verificados. Precios ≈ con incertidumbre visual; solo dentro del tramo del eje leído. Velas H/L/O/C son candidatos visuales, no registros exactos ni fechas verificadas.</p>
+        <details><summary>Alternativa manual y diagnóstico</summary><fieldset><legend>Calibración manual de precio (mismo panel, nunca volumen)</legend>
           <p>Usá dos etiquetas del eje de precios: elegí una referencia, pulsá su altura en el gráfico y escribí el precio exacto. Decimal con punto, sin separadores de miles.</p>
           {[0,1].map(i=><div key={i} className={styles.row}><button aria-pressed={tool==='calibrate'&&anchorIndex===i} onClick={()=>{setAnchorIndex(i as 0|1);setTool('calibrate');}}>Marcar {i+1}{anchors[i]!==null?` (${(anchors[i]!*100).toFixed(1)}%)`:''}</button><input aria-label={`Precio referencia ${i+1}`} type="number" min="0" step="any" inputMode="decimal" value={prices[i]} onChange={e=>setPrices(p=>i===0?[e.target.value,p[1]]:[p[0],e.target.value])}/></div>)}
           <label>Escala<select value={scale} onChange={e=>setScale(e.target.value as 'linear'|'log')}><option value="linear">Lineal</option><option value="log">Logarítmica</option></select></label><button onClick={applyCalibration}>Aplicar calibración</button>
-        </fieldset>
-        <p>{scene?.calibration?`Precio estimado · escala ${scene.calibration.scale} · origen manual.`:scene?.invalidationReason??'Sin calibración: solo coordenadas.'} En vivo, navegar, redimensionar o perder foco invalida la calibración; un cambio automático del iframe no es detectable. Preferí captura para comparar con precisión.</p>
+        </fieldset></details>
+        <p>{scene?.calibration?`Precio estimado · escala ${scene.calibration.scale} · origen ${scene.calibration.source}.`:scene?.invalidationReason??'Sin calibración: solo coordenadas.'} En vivo, navegar, redimensionar o perder foco invalida la calibración; un cambio automático del iframe no es detectable. Solo el frame congelado permite comparar escala y dibujos; cambios automáticos del widget invalidan cualquier suposición sobre la vista viva.</p>
         <label>Dibujo<select value={selected??''} onChange={e=>setSelected(e.target.value||null)}><option value="">Seleccioná un dibujo</option>{scene?.drawings.map((d,i)=><option key={d.id} value={d.id}>{i+1}. {d.kind}</option>)}</select></label>
         {activeDrawing?<div className={styles.readings}><p>{activeDrawing.points.length} puntos · {activeDrawing.createdAt}</p><p>Inicio: {reading(activeDrawing.points[0])}</p><p>Fin: {reading(activeDrawing.points.at(-1)!)}</p></div>:null}
         <div className={styles.row}><button disabled={!doc} onClick={()=>doc&&download(serializeDocument(doc),'application/json','cloe-editor.json')}>Exportar JSON + capturas</button><button disabled={!doc} onClick={exportSvg}>Exportar SVG</button></div>
-        <p>Guardado local por cuenta y dispositivo. No se envía a Cloe ni a un servidor. JSON incluye imagen reducida (máx. 2400 px), puntos y calibraciones para reconstrucción; SVG exporta la capa activa.</p>
+        <p>Guardado local por cuenta y dispositivo. No se envía a Cloe ni a un servidor. JSON incluye evidencia OCR (etiquetas, hash, hora, error, candidatos), imagen reducida (máx. 2400 px), puntos y calibraciones para reconstrucción; SVG exporta la capa activa.</p>
       </section>:null}
       {message?<p role="status" className={styles.message}>{message}<button aria-label="Cerrar aviso" onClick={()=>setMessage('')}>×</button></p>:null}
     </div>

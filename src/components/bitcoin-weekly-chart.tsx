@@ -8,6 +8,7 @@ const chartUrl = "https://www.tradingview.com/chart/?symbol=BINANCE%3ABTCUSDT&in
 
 export function BitcoinWeeklyChart({ userId }: { userId: string }) {
   const screenRef = useRef<HTMLElement>(null);
+  const captureTargetRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -82,9 +83,9 @@ export function BitcoinWeeklyChart({ userId }: { userId: string }) {
 
   return (
     <main ref={screenRef} className={styles.screen} aria-label="Gráfico de Bitcoin semanal">
-      <div className={styles.chart}>
+      <div ref={captureTargetRef} className={styles.chart}>
         <div ref={widgetRef} style={{ position: "absolute", inset: 0 }} />
-        <ChartEditor key={userId} userId={userId} />
+        <ChartEditor key={userId} userId={userId} captureTargetRef={captureTargetRef} />
       </div>
       {loadFailed ? (
         <p role="alert" className={styles.notice}>
