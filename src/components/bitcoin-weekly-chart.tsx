@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ChartEditor } from "./chart-editor";
 import styles from "./bitcoin-weekly-chart.module.css";
 
 const chartUrl = "https://www.tradingview.com/chart/?symbol=BINANCE%3ABTCUSDT&interval=W";
 
-export function BitcoinWeeklyChart() {
+export function BitcoinWeeklyChart({ userId }: { userId: string }) {
   const screenRef = useRef<HTMLElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -81,7 +82,10 @@ export function BitcoinWeeklyChart() {
 
   return (
     <main ref={screenRef} className={styles.screen} aria-label="Gráfico de Bitcoin semanal">
-      <div ref={widgetRef} className={styles.chart} />
+      <div className={styles.chart}>
+        <div ref={widgetRef} style={{ position: "absolute", inset: 0 }} />
+        <ChartEditor key={userId} userId={userId} />
+      </div>
       {loadFailed ? (
         <p role="alert" className={styles.notice}>
           No se pudo cargar TradingView. <a href={chartUrl} target="_blank" rel="noopener noreferrer">Abrir Bitcoin semanal</a>

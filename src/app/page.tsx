@@ -12,5 +12,5 @@ export default async function Home() {
 
   if (!userId) redirect("/login");
 
-  return <BitcoinWeeklyChart />;
+  return <BitcoinWeeklyChart userId={userId} />;
 }
