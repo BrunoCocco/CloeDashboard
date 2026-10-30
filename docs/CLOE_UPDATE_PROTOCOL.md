@@ -62,3 +62,7 @@ DATO → ANÁLISIS → HIPÓTESIS → IMPLICACIÓN. Coincidencias, contradiccion
 El diario describe el panorama del día hasta el corte explícito Europe/Madrid y los cambios frente al último corte válido. El intradía bajo demanda actualiza BTC/SOL en 15m y 1h exclusivamente con gráfico, precio y volumen actuales verificados; 4H puede aportar contexto adicional.
 Cada cotización identifica fuente, exchange, mercado/contrato, par, moneda, tipo de precio, timestamp del dato y hora de consulta. Si la actualidad o la serie no se puede verificar, declarar insuficiencia por activo; no reutilizar precios de noticias ni inventar niveles o indicadores.
 El seguimiento de operaciones se concentra en Cloe Gestión mediante Telegram bajo sus reglas CG-1.0, separado de los informes analíticos. Conservar los saldos reales y el histórico analítico.
+
+## Cortes de análisis basados en capturas
+
+Para nuevos cortes de captura y su histórico, aplicar [ANALYSIS_REVIEW_STANDARD.md](ANALYSIS_REVIEW_STANDARD.md), versión 1.0. Mantener el ejemplo de prueba separado de registros reales, las horas inferidas sin verificar como tales, y las correcciones acumulativas sin reescribir el corte original. El estándar no habilita ingesta automática ni modifica la separación de módulos de este protocolo.
