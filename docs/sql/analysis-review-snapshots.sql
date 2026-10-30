@@ -1,4 +1,6 @@
--- PREPARED ONLY; not applied. Target: CloeDashboard wvwxwutjdqsktnrcdbkf.
+-- Applied in CloeDashboard wvwxwutjdqsktnrcdbkf through Supabase migration
+-- version 20261030171301: analysis_review_snapshots (coordinator verified success).
+-- Reference DDL: do not reapply to an already migrated database.
 -- Existing tables and historical rows are intentionally untouched.
 begin;
 create table public.analysis_review_snapshots (

@@ -37,7 +37,7 @@ on conflict (user_id, ingestion_key) do nothing
 returning id, analysis_date, observed_at, created_at;
 ```
 
-Después se verifica SELECT con el usuario propietario, orden, detalle, RLS de otro usuario y visualización autenticada. No basta con insertar. El SQL preparado en `docs/sql/analysis-review-snapshots.sql` **no se aplicó en la nube**. Antes de generar/aplicar una migración: confirmar proyecto, inspeccionar esquema real, crear el archivo mediante `supabase migration new`, revisar la migración, ejecutar pruebas/advisors y comprobar la pantalla. Nunca usar la DB del proyecto Graficoxrp para este archivo.
+Después se verifica SELECT con el usuario propietario, orden, detalle, RLS de otro usuario y visualización autenticada. No basta con insertar. El SQL de referencia en `docs/sql/analysis-review-snapshots.sql` fue aplicado en CloeDashboard mediante una migración de Supabase el 2026-10-30; su verificación y límites se registran en `ANALYSIS_HISTORY_PREVIEW_REPORT.md`. No volver a aplicar ese DDL sobre la tabla existente. Para cambios futuros, antes de generar/aplicar otra migración: confirmar proyecto, inspeccionar esquema real, crear el archivo mediante `supabase migration new`, revisar la migración, ejecutar pruebas/advisors y comprobar la pantalla. Nunca usar la DB del proyecto Graficoxrp para este archivo.
 
 ## Ejemplo de validación BTC
 
