@@ -54,8 +54,7 @@ export function AnalysisReviewArchive({ archive }: { archive: ReviewArchive }) {
                     archive.selected?.id === item.id ? "page" : undefined
                   }
                 >
-                  {item.analysisDate} · {item.asset} · registrado{" "}
-                  {item.createdAt}
+                  {item.analysisDate} · {item.asset}
                   {item.revisionOf ? " · corrección" : ""}
                 </Link>
               </li>
