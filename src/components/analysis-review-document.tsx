@@ -21,9 +21,7 @@ export function AnalysisReviewDocument({ entry }: { entry: ReviewEntry }) {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(new Date(value));
-  const summary =
-    s.interpretation[0]?.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ¿¡])/)[0] ??
-    "Sin síntesis documentada.";
+  const summary = s.scenarios.slice(0, 2).map(scenario => scenario.reading).join(" ") || "Escenario pendiente de datos suficientes.";
   function download() {
     const blob = new Blob([JSON.stringify(reviewExport(entry), null, 2)], {
       type: "application/json",
@@ -73,77 +71,10 @@ export function AnalysisReviewDocument({ entry }: { entry: ReviewEntry }) {
           ? `${time(entry.observedAt, "Europe/Madrid")} · Madrid`
           : `${s.source.kind === "capture-transcription" ? "Captura" : "Fuente"} · hora de mercado no verificada`}
       </p>
-      <p className={styles.synthesis}>{summary}</p>
-      <div className={styles.scenarios}>
-        {s.scenarios.slice(0, 2).map((scenario, i) => (
-          <section className={styles.scenario} key={i}>
-            <h4>{scenario.name}</h4>
-            <p>{scenario.reading}</p>
-          </section>
-        ))}
-      </div>
+      <p className={styles.synthesis}><strong>Escenario: </strong>{summary}</p>
       <details className={styles.fullDetails}>
         <summary>Análisis completo</summary>
         <div className={styles.fullContent}>
-          <section>
-            <h4>Fuente y corte</h4>
-            <p>{s.title}</p>
-            <p>{s.source.description}</p>
-            <dl className={styles.metadata}>
-              <div>
-                <dt>Día de análisis</dt>
-                <dd>{entry.analysisDate}</dd>
-              </div>
-              <div>
-                <dt>Hora observada · Madrid</dt>
-                <dd>
-                  {entry.observedAt
-                    ? time(entry.observedAt, "Europe/Madrid")
-                    : "No verificada"}
-                </dd>
-              </div>
-              <div>
-                <dt>Registro · UTC</dt>
-                <dd>
-                  {entry.createdAt
-                    ? time(entry.createdAt, "UTC")
-                    : "Sin registro"}
-                </dd>
-              </div>
-              <div>
-                <dt>Hora atribuida a captura</dt>
-                <dd>
-                  {s.source.captureTime ?? "Desconocida"} ·{" "}
-                  {s.source.captureTimeBasis === "filename-derived"
-                    ? "Derivada del nombre del archivo"
-                    : s.source.captureTimeBasis === "verified"
-                      ? "Verificada en fuente"
-                      : "Sin verificar"}
-                </dd>
-              </div>
-            </dl>
-            <p>
-              Mercado:{" "}
-              {s.asset.market === "derivative"
-                ? "Derivado"
-                : s.asset.market === "spot"
-                  ? "Spot"
-                  : "No verificado"}{" "}
-              · {s.asset.unit} · Estándar {s.standardVersion}
-            </p>
-            {entry.revisionOf ? (
-              <p>
-                Corrección del corte {entry.revisionOf}; original conservado.
-              </p>
-            ) : null}
-            {s.source.sha256 ? (
-              <p className={styles.hash}>SHA-256: {s.source.sha256}</p>
-            ) : null}
-            <p>
-              Fundamental y Fechas tienen cortes independientes. Esta captura no
-              actualiza cotizaciones.
-            </p>
-          </section>
           <section>
             <h4>Datos y configuración</h4>
             <div className={styles.tableWrap}>
@@ -193,9 +124,6 @@ export function AnalysisReviewDocument({ entry }: { entry: ReviewEntry }) {
             {s.hypotheses.map((h, i) => (
               <div key={i}>
                 <p>{h.statement}</p>
-                <p className={styles.small}>
-                  Evidencias: {h.evidenceIds.join(", ")}
-                </p>
                 <h5>Confirmaciones pendientes</h5>
                 <List items={h.confirmation} />
                 <h5>Invalidaciones</h5>
