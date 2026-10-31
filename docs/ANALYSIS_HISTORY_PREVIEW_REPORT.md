@@ -43,3 +43,11 @@ La creación de un archivo local con Supabase CLI quedó bloqueada: los dos inte
 ### Cierre adicional verificado en nube
 
 El reintento de la misma `ingestion_key` conservó exactamente un corte nuevo. Los conteos finales coinciden con los originales: 154 análisis técnicos, 22 síntesis y 1.080 velas; el archivo nuevo contiene 1 corte BTC. Después de añadir el índice de correcciones, advisors de rendimiento ya no informa claves foráneas sin índice; quedan avisos informativos de índices aún sin uso, que no se eliminaron. La verificación visual de sesión autenticada en el despliegue sigue sin realizarse; no se presenta como completada.
+
+## Iteración de presentación compacta
+
+Se recortó la superficie principal a corte/fecha, síntesis breve, dos escenarios y un único desplegable de análisis completo. El histórico empieza cerrado; los módulos anteriores se solicitan desde «Contexto de mercado» y muestran su fecha independiente. Se eliminaron de la vista inicial las instrucciones sobre DB/orden, el enlace de demo, las tres tarjetas de timestamps y las afirmaciones redundantes de sincronización. La prueba conserva solo un distintivo discreto. Un precio numérico se muestra como «En captura» únicamente si existe el dato `price` visible con unidad coincidente; nunca como cotización actual.
+
+Medición del coordinador en navegador real con el mismo componente y fixture: **293 → 78 palabras visibles (−73%)**, incluida la etiqueta compacta de precio de captura. Escritorio y móvil sin desbordamientos ni errores JavaScript. Evidencia temporal: `product-browser/history-after-desktop.png` y `history-after-mobile.png`. El detalle conserva las 15 lecturas, fuentes, parámetros, hipótesis, confirmaciones, invalidaciones y bibliografía; exportación íntegra verificada. El resumen visible usa una oración completa y no recorta invalidaciones, que permanecen completas en el detalle. No se modificaron snapshots, histórico ni datos en DB. El contexto de mercado solo se consulta al solicitarlo con `context=1`; el enlace no hace prefetch y conserva los filtros del archivo.
+
+Checks de esta iteración: 9/9 pruebas, incluyendo regresión de exportación completa y la identidad de un corte histórico. Tipos y lint correctos; la compilación con recursos reales se comprueba en Vercel. No se agregaron dependencias ni servicios.

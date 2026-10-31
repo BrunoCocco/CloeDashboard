@@ -13,13 +13,9 @@ export default async function ReviewExample() {
     <main className="min-h-screen bg-background px-4 py-6 text-foreground">
       <div className="mx-auto max-w-6xl">
         <Link prefetch={false} href="/" className="text-cyan-300 underline">
-          ← Dashboard e histórico real
+          ← Análisis
         </Link>
-        <h1 className="mt-4 text-2xl font-semibold">Prueba de análisis BTC</h1>
-        <p className="mt-3 text-zinc-300">
-          Vista privada de ejemplo. No depende de la consulta histórica ni carga
-          datos de demostración en la base.
-        </p>
+        <h1 className="sr-only">Ejemplo de análisis</h1>
         <AnalysisReviewDocument entry={btcReviewExample} />
       </div>
     </main>

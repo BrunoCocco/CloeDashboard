@@ -12,26 +12,10 @@ export function AnalysisReviewArchive({ archive }: { archive: ReviewArchive }) {
     return `/?${p}`;
   };
   return (
-    <section className={styles.archive} aria-labelledby="review-archive-title">
-      <header className={styles.header}>
-        <div>
-          <p className={styles.eyebrow}>
-            Archivo analítico · base propia CloeDashboard
-          </p>
-          <h2 id="review-archive-title">Último análisis e histórico</h2>
-        </div>
-        <Link prefetch={false} href="/analisis/ejemplo">
-          Ver prueba BTC separada
-        </Link>
-      </header>
-      <p>
-        Orden: día de análisis descendente y, dentro del día, registro
-        descendente. La hora observada se muestra aparte; una hora de archivo no
-        se trata como hora de mercado.
-      </p>
+    <section className={styles.archive} aria-label="Análisis e histórico">
       <form action="/" method="get" className={styles.filters}>
         <label>
-          Activo
+          <span className={styles.srOnly}>Activo</span>
           <select name="asset" defaultValue={archive.asset ?? ""}>
             <option value="">Todos</option>
             {REVIEW_ASSETS.map((symbol) => (
@@ -40,9 +24,11 @@ export function AnalysisReviewArchive({ archive }: { archive: ReviewArchive }) {
           </select>
         </label>
         <button type="submit">Filtrar</button>
-        <Link prefetch={false} href="/">
-          Volver al último corte
-        </Link>
+        {archive.selected?.isLatest === false ? (
+          <Link prefetch={false} href="/">
+            Último corte
+          </Link>
+        ) : null}
       </form>
       {archive.message ? (
         <p role="status" className={styles.warning}>
@@ -50,14 +36,14 @@ export function AnalysisReviewArchive({ archive }: { archive: ReviewArchive }) {
         </p>
       ) : null}
       {archive.status === "empty" ? (
-        <p className={styles.notice}>
-          Sin actualización: no hay cortes guardados para este filtro. El
-          ejemplo BTC está separado y no ocupa el histórico real.
-        </p>
+        <p className={styles.notice}>Sin análisis para este filtro.</p>
+      ) : null}
+      {archive.selected ? (
+        <AnalysisReviewDocument entry={archive.selected} />
       ) : null}
       {archive.items.length ? (
-        <details open className={styles.history}>
-          <summary>Seleccionar corte · hasta 20 por página</summary>
+        <details className={styles.history}>
+          <summary>Histórico</summary>
           <ul>
             {archive.items.map((item) => (
               <li key={item.id}>
@@ -81,9 +67,6 @@ export function AnalysisReviewArchive({ archive }: { archive: ReviewArchive }) {
             </Link>
           ) : null}
         </details>
-      ) : null}
-      {archive.selected ? (
-        <AnalysisReviewDocument entry={archive.selected} />
       ) : null}
     </section>
   );

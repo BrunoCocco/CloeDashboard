@@ -7,7 +7,8 @@ import { AssetRadar } from "@/components/asset-radar";
 import { EventsPanel } from "@/components/events-panel";
 import { AnalystSynthesisPanel } from "@/components/analyst-synthesis";
 import { signOut } from "@/app/actions";
-import { loadDashboard } from "@/lib/dashboard";
+import Link from "next/link";
+import { loadMarketContext } from "@/lib/analysis-reviews/context";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -16,7 +17,12 @@ export const dynamic = "force-dynamic";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ asset?: string; cut?: string; before?: string }>;
+  searchParams: Promise<{
+    asset?: string;
+    cut?: string;
+    before?: string;
+    context?: string;
+  }>;
 }) {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -26,57 +32,43 @@ export default async function Home({
   if (!userId) redirect("/login");
 
   const params = await searchParams;
-  const [dashboard, archive] = await Promise.all([
-    loadDashboard(userId).catch(() => null),
+  const [context, archive] = await Promise.all([
+    loadMarketContext(userId, params.context),
     loadReviewArchive(userId, params),
   ]);
-  const userEmail =
-    typeof claims?.email === "string" ? claims.email : "Cuenta activa";
 
+  const dashboard = context.status === "available" ? context.dashboard : null;
+  const contextParams = new URLSearchParams();
+  for (const key of ["asset", "cut", "before"] as const)
+    if (typeof params[key] === "string" && params[key])
+      contextParams.set(key, params[key]);
+  contextParams.set("context", "1");
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-[1920px] flex-col px-5 py-4 lg:px-8">
-        <header className="mb-2 grid items-center gap-4 border-b border-border/80 pb-4 md:grid-cols-[1fr_auto_1fr]">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 min-w-16 place-items-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 font-mono text-xs font-black tracking-[0.14em] text-cyan-300">
-              CLOE
-            </div>
-            <div className="flex h-11 flex-col justify-center">
-              <p className="font-mono text-sm font-semibold uppercase leading-none tracking-[0.18em] text-cyan-300 sm:text-base">
-                Cloe Analista
-              </p>
-              <p className="mt-1 font-mono text-[9px] uppercase leading-none tracking-[0.12em] text-muted sm:text-[10px]">
-                Disciplina + constancia = resultados
-              </p>
-            </div>
-          </div>
-
-          <div className="order-first text-center md:order-none">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted">
-              Panel privado
-            </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">
-              Bruno Dashboard
-            </h1>
-          </div>
-
-          <div className="flex items-center justify-end gap-2">
-            <form action={signOut}>
-              <button className="button-danger" type="submit">
-                Salir
-              </button>
-            </form>
-          </div>
+        <header className="flex items-center justify-between gap-3 border-b border-border py-2">
+          <h1 className="text-base font-semibold text-white">
+            Cloe · Análisis
+          </h1>
+          <form action={signOut}>
+            <button className="button-danger" type="submit">
+              Salir
+            </button>
+          </form>
         </header>
 
         <AnalysisReviewArchive archive={archive} />
         {dashboard ? (
-          <>
-            <p className="mt-5 rounded border border-slate-700 p-3 text-sm text-slate-300">
-              Módulos históricos independientes · corte legacy:{" "}
-              {dashboard.lastUpdated}. No pertenecen automáticamente al análisis
-              de captura seleccionado arriba. Sus cotizaciones de mercado
-              conservan fuentes y fechas propias.
+          <details
+            open
+            id="market-context"
+            className="mt-4 rounded-lg border border-border p-4"
+          >
+            <summary className="cursor-pointer text-sm text-zinc-300">
+              Contexto de mercado · {dashboard.lastUpdated}
+            </summary>
+            <p className="mt-3 text-xs text-muted">
+              Fuentes y fechas independientes del corte técnico.
             </p>
             <section
               aria-label="Resumen del mercado"
@@ -200,77 +192,28 @@ export default async function Home({
                 <EventsPanel events={dashboard.events} />
               </aside>
             </section>
-
-            <section
-              className={
-                dashboard.hasData
-                  ? "mt-3 flex items-center justify-between gap-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-2.5 text-sm text-emerald-100"
-                  : "mt-3 flex items-center justify-between gap-4 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-4 py-2.5 text-sm text-amber-100"
-              }
-            >
-              <p>
-                <strong
-                  className={
-                    dashboard.hasData
-                      ? "font-semibold text-emerald-300"
-                      : "font-semibold text-amber-300"
-                  }
-                >
-                  {dashboard.hasData
-                    ? "Histórico activo."
-                    : "Esperando el primer análisis."}
-                </strong>{" "}
-                {dashboard.hasData
-                  ? "La pantalla refleja los registros privados almacenados en Supabase."
-                  : "La conexión funciona; los paneles se completarán cuando Cloe guarde datos."}
-              </p>
-              <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-300/80 sm:block">
-                Módulos legacy
-              </span>
-            </section>
-
-            <footer className="mt-3 grid items-center gap-3 border-t border-border pt-3 text-center font-mono text-[10px] uppercase tracking-wider text-muted sm:grid-cols-2 xl:grid-cols-[1fr_auto_1fr] xl:text-left">
-              <span>DICIPLINA + CONSTANCIA = RESULTADOS</span>
-              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-end xl:justify-center">
-                <span className="max-w-48 truncate" title={userEmail}>
-                  {userEmail}
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <span
-                    className={
-                      dashboard.hasData
-                        ? "status-dot status-dot-live"
-                        : "status-dot"
-                    }
-                    aria-hidden="true"
-                  />
-                  <span
-                    className={
-                      dashboard.hasData
-                        ? "font-semibold text-emerald-300"
-                        : "font-semibold text-amber-300"
-                    }
-                  >
-                    {dashboard.hasData
-                      ? "Datos sincronizados"
-                      : "Base conectada"}
-                  </span>
-                </span>
-              </div>
-              <span className="sm:col-span-2 sm:text-right xl:col-span-1">
-                Última actualización: {dashboard.lastUpdated}
-              </span>
-            </footer>
-          </>
+          </details>
+        ) : context.status === "not-requested" ? (
+          <Link
+            prefetch={false}
+            href={`/?${contextParams}#market-context`}
+            className="mt-4 rounded-lg border border-border p-4 text-sm text-zinc-300"
+          >
+            Contexto de mercado
+          </Link>
         ) : (
-          <section className="panel mt-4 p-4" role="status">
-            <h2>Módulos anteriores sin actualización</h2>
-            <p>
-              No se pudieron consultar los datos legacy. Su histórico no se ha
-              modificado; este fallo es independiente del archivo de cortes y de
-              la prueba BTC.
+          <details
+            open
+            id="market-context"
+            className="mt-4 rounded-lg border border-border p-4"
+          >
+            <summary className="cursor-pointer text-sm text-muted">
+              Contexto de mercado · sin actualización
+            </summary>
+            <p className="mt-3 text-sm">
+              No se pudieron consultar estos módulos.
             </p>
-          </section>
+          </details>
         )}
       </div>
     </main>

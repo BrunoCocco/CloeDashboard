@@ -240,3 +240,62 @@ test("empty, unavailable and invalid cuts remain distinct without demo substitut
   assert.doesNotMatch(out.message, /private detail/);
   assert.equal(out.selected, null);
 });
+
+test("compact view export preserves every stored fact, scenario requirement and historical identity", () => {
+  const { reviewExport } = load("src/lib/analysis-reviews/export.ts");
+  const entry = {
+    ...example,
+    id: id(9),
+    example: false,
+    isLatest: false,
+    revisionOf: id(8),
+    createdAt: "2026-10-30T17:14:00.827296Z",
+  };
+  const out = JSON.parse(JSON.stringify(reviewExport(entry)));
+  assert.equal(out.example, false);
+  assert.equal(out.record.id, id(9));
+  assert.equal(out.record.revisionOf, id(8));
+  assert.equal(out.record.createdAt, entry.createdAt);
+  assert.deepEqual(out.snapshot, JSON.parse(JSON.stringify(entry.snapshot)));
+  assert.equal(out.snapshot.facts.length, 15);
+  assert.ok(
+    out.snapshot.scenarios.every(
+      (s) => s.confirmation.length && s.invalidation.length,
+    ),
+  );
+  assert.equal(out.snapshot.source.observedAt, null);
+});
+
+test("market context performs no legacy request by default and loads only on explicit request", async () => {
+  const { loadMarketContext } = load("src/lib/analysis-reviews/context.ts", {
+    "@/lib/dashboard": {
+      loadDashboard: () => {
+        throw Error("Unexpected default call");
+      },
+    },
+  });
+  let calls = 0;
+  const get = async (user) => {
+    calls++;
+    assert.equal(user, "owner");
+    return { marker: "legacy" };
+  };
+  for (const flag of [undefined, null, "0", "yes", 1, []])
+    assert.equal(
+      (await loadMarketContext("owner", flag, get)).status,
+      "not-requested",
+    );
+  assert.equal(calls, 0);
+  const result = await loadMarketContext("owner", "1", get);
+  assert.equal(result.status, "available");
+  assert.equal(result.dashboard.marker, "legacy");
+  assert.equal(calls, 1);
+  assert.equal(
+    (
+      await loadMarketContext("owner", "1", async () => {
+        throw Error("private service failure");
+      })
+    ).status,
+    "unavailable",
+  );
+});
