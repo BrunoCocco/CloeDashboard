@@ -66,3 +66,5 @@ El seguimiento de operaciones se concentra en Cloe Gestión mediante Telegram ba
 ## Cortes de análisis basados en capturas
 
 Para nuevos cortes de captura y su histórico, aplicar [ANALYSIS_REVIEW_STANDARD.md](ANALYSIS_REVIEW_STANDARD.md), versión 1.0. Mantener el ejemplo de prueba separado de registros reales, las horas inferidas sin verificar como tales, y las correcciones acumulativas sin reescribir el corte original. El estándar no habilita ingesta automática ni modifica la separación de módulos de este protocolo.
+
+Desde el 31/10/2026, los cortes de captura incluyen comparación acumulativa con el corte anterior conforme al proceso de `ANALYSIS_REVIEW_STANDARD.md`; conservar originales y límites de comparabilidad. El alcance de una captura sigue siendo técnico, no una actualización general de macro/calendario.

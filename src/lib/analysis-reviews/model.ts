@@ -30,7 +30,7 @@ export type ReviewSnapshot = {
   };
   facts: {
     id: string;
-    timeframe: "1W" | "1D" | "4H" | "unknown";
+    timeframe: "1W" | "1D" | "4H" | "1H" | "unknown";
     label: string;
     value: number | string | null;
     unit: string | null;
@@ -158,7 +158,7 @@ export function parseReviewSnapshot(input: unknown): ReviewSnapshot {
     ids.add(f.id);
     text(f.label, 180);
     if (
-      !["1W", "1D", "4H", "unknown"].includes(String(f.timeframe)) ||
+      !["1W", "1D", "4H", "1H", "unknown"].includes(String(f.timeframe)) ||
       !["visible", "estimated", "unknown"].includes(String(f.origin))
     )
       throw Error("Origen inválido");

@@ -8,7 +8,7 @@ Este estándar conserva información, interpretación y condiciones de revisión
 - Separar día del análisis, hora observada de mercado, hora atribuida a captura y fecha real de registro. Una hora inferida del nombre de archivo se etiqueta `filename-derived`; nunca verifica una cotización ni se copia como hora observada. Si no se conoce un dato, conservar `null` y explicar el límite.
 - Registrar procedencia y, cuando esté disponible, huella SHA-256 de la evidencia; no publicar capturas privadas, identificadores personales ni ubicaciones privadas en el repositorio.
 - Separar hechos transcritos, estimaciones y desconocidos de la interpretación. Vincular hipótesis a los identificadores de evidencia; mostrar valores, unidades y parámetros realmente visibles. No heredar configuración por defecto de otro gráfico.
-- Analizar semanal, diario y 4H sin mezclar sus ejes. Si no puede atribuirse una anotación a un marco con certeza, indicar marco desconocido. Señalar contradicciones multitemporales, vela bajo cursor/abierta/cerrada y falta de OHLCV cuando corresponda.
+- Analizar las temporalidades realmente visibles (incluida 1H), sin mezclar sus ejes. Si no puede atribuirse una anotación a un marco con certeza, indicar marco desconocido. Señalar contradicciones multitemporales, vela bajo cursor/abierta/cerrada y falta de OHLCV cuando corresponda.
 - Comparar amplitudes de movimientos como observación. Un dibujo de proyección no confirma un pronóstico ni su probabilidad. RSI 50 de referencia no equivale a RSI actual; suavizado no confirma método; VWAP Year no se reemplaza por trimestre.
 - Exponer interpretación, hipótesis, escenarios contrarios, confirmaciones e invalidaciones. Wyckoff/divergencias requieren evidencia suficiente; no asignar fases ni sobreventa sin base. No usar probabilidades numéricas sin método validado.
 - Distinguir bibliografía efectivamente consultada durante el corte de marcos conceptuales. No afirmar lectura de libros o documentos no consultados.
@@ -42,3 +42,15 @@ Después se verifica SELECT con el usuario propietario, orden, detalle, RLS de o
 ## Ejemplo de validación BTC
 
 `src/data/btc-review-example.ts` es una transcripción de prueba autorizada, no una fila real ni una cotización actual. Se muestra separadamente en `/analisis/ejemplo`, protegida por sesión. Tiene día 2026-10-30, hora atribuida al archivo y hora de mercado nula. Su fecha de registro es nula porque no se insertó. Descargar JSON preserva la marca `example:true`. No incluir imagen ni identificadores privados en Git.
+
+## Proceso acumulativo de captura y comparación · aprobado 31/10/2026
+
+Cada captura analizada se incorpora como un nuevo corte administrativo idempotente, después de validar el contrato. Recuperar primero de DB el corte previo del mismo propietario y activo; conservar su ID y fecha en la interpretación comparativa. La carga nueva no sustituye el original ni cambia sus hipótesis.
+
+1. Identificar fuente y hash, día del análisis, marcos visibles, datos transcritos/estimados/desconocidos y horas verificadas o nulas. El cursor puede mostrar una vela histórica: diferenciar sus valores de las etiquetas del extremo derecho.
+2. Comparar solo magnitudes compatibles; expresar diferencias entre capturas, nunca retornos de 24 horas sin timestamps verificables. Un cambio de nivel dibujado no prueba desplazamiento del mercado. No comparar Bollinger de 4H con 1H como evolución del mismo indicador. Cambios de parámetros o fuente limitan comparabilidad.
+3. Guardar síntesis histórica compacta en la primera interpretación (visible), y debajo detalle de comparación, referencia del corte anterior, hipótesis conservadas, novedades y condiciones pendientes. El detalle y la exportación conservan toda la evidencia disponible.
+4. No dar un escenario anterior por cumplido o invalidado por dos fotografías. Registrar «sin evaluación concluyente» cuando falten trayectoria, cierres y volumen. Las evaluaciones formales de resultados siguen pendientes de su tabla/UI; no simularlas.
+5. Insertar sin UPDATE/DELETE, verificar lectura por propietario, orden del último corte, conservación del previo y representación del componente. Si no puede comprobarse la sesión privada desplegada, informar el límite. Fundamental y Fechas mantienen su propio corte.
+
+Este es un procedimiento de trabajo autorizado al solicitar análisis/carga; no un servicio automático entre conversaciones ni una ingesta programada de capturas.
