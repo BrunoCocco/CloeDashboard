@@ -54,3 +54,7 @@ Cada captura analizada se incorpora como un nuevo corte administrativo idempoten
 5. Insertar sin UPDATE/DELETE, verificar lectura por propietario, orden del último corte, conservación del previo y representación del componente. Si no puede comprobarse la sesión privada desplegada, informar el límite. Fundamental y Fechas mantienen su propio corte.
 
 Este es un procedimiento de trabajo autorizado al solicitar análisis/carga; no un servicio automático entre conversaciones ni una ingesta programada de capturas.
+
+## Carga por defecto tras cada análisis · instrucción 01/11/2026
+
+Bruuno autoriza y solicita que, al terminar cada análisis de mercado de Cloe, se cargue el corte correspondiente al dashboard sin esperar otro pedido. Aplicar esta regla dentro de la misma tarea: validar el registro, recuperar el previo, insertar de forma idempotente sin reemplazar el histórico y comprobar lectura por propietario y orden del último corte. La presentación prioriza escenario desarrollado, interpretación de mercado y niveles útiles; los controles técnicos quedan en el registro/exportación. Si faltan datos, conservar la incertidumbre; si falla la carga o no se puede comprobar la pantalla privada, informarlo explícitamente. No presentar solo una respuesta en chat como carga completada. Esta autorización no crea un servicio autónomo, ni cambia reglas de seguridad, gestión u operaciones.
