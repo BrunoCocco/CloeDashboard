@@ -93,6 +93,12 @@ const directionLabels: Record<string, MacroMetric["direction"]> = {
 
 const macroDefinitions = [
   { key: "net_fed_liquidity", name: "Liquidez neta de la Fed" },
+  { key: "walcl", name: "Balance de la Fed" },
+  { key: "tga", name: "Tesoro · TGA" },
+  { key: "rrp", name: "Reverse repo · RRP" },
+  { key: "m2_usa", name: "M2 Estados Unidos" },
+  { key: "crypto_market_cap", name: "Capitalización cripto" },
+  { key: "btc_dominance", name: "Dominancia BTC" },
   { key: "global_m2", name: "Global M2" },
   { key: "dxy", name: "DXY" },
   { key: "treasury_2y", name: "Treasury 2 años" },
@@ -401,7 +407,7 @@ export async function loadDashboard(userId: string) {
   const macro: MacroMetric[] = macroDefinitions.map((definition) => {
     const history = macroHistory.get(definition.key) ?? [];
     const observation = history[0];
-    const previous = history[1];
+    const previous = history.slice(1).find(row => row.source_name === observation?.source_name);
     const fearGreedState = definition.key === "fear_greed"
       ? classifyFearGreed(observation?.value)
       : null;
@@ -409,7 +415,7 @@ export async function loadDashboard(userId: string) {
       ? directionLabels[observation.direction ?? "unknown"] ?? "Sin datos"
       : "Sin datos";
     return {
-      name: fearGreedState?.label ?? definition.name,
+      name: fearGreedState ? `${definition.name} · ${fearGreedState.label}` : definition.name,
       value: formatMacroValue(definition.key, observation?.value, observation?.unit),
       delta: dailyChange(definition.key, observation?.value, previous?.value),
       observedAt: formatObservationDate(observation?.observed_at),

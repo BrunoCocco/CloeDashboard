@@ -58,3 +58,7 @@ Este es un procedimiento de trabajo autorizado al solicitar análisis/carga; no 
 ## Carga por defecto tras cada análisis · instrucción 01/11/2026
 
 Bruuno autoriza y solicita que, al terminar cada análisis de mercado de Cloe, se cargue el corte correspondiente al dashboard sin esperar otro pedido. Aplicar esta regla dentro de la misma tarea: validar el registro, recuperar el previo, insertar de forma idempotente sin reemplazar el histórico y comprobar lectura por propietario y orden del último corte. La presentación prioriza escenario desarrollado, interpretación de mercado y niveles útiles; los controles técnicos quedan en el registro/exportación. Si faltan datos, conservar la incertidumbre; si falla la carga o no se puede comprobar la pantalla privada, informarlo explícitamente. No presentar solo una respuesta en chat como carga completada. Esta autorización no crea un servicio autónomo, ni cambia reglas de seguridad, gestión u operaciones.
+
+## Ampliación de entrega · 03/11/2026
+
+Al recibir un ZIP, completar además revisión independiente del contexto de mercado según `CLOE_UPDATE_PROTOCOL.md`, sección «ZIP técnico + revisión de mercado». Publicar primero el corte técnico y debajo la revisión macro con sus propias fechas. Esto sustituye el alcance exclusivamente técnico de la entrega ZIP anterior; mantiene intacta la independencia del razonamiento técnico.
