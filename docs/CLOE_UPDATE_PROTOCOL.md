@@ -68,3 +68,15 @@ El seguimiento de operaciones se concentra en Cloe Gestión mediante Telegram ba
 Para nuevos cortes de captura y su histórico, aplicar [ANALYSIS_REVIEW_STANDARD.md](ANALYSIS_REVIEW_STANDARD.md), versión 1.0. Mantener el ejemplo de prueba separado de registros reales, las horas inferidas sin verificar como tales, y las correcciones acumulativas sin reescribir el corte original. El estándar no habilita ingesta automática ni modifica la separación de módulos de este protocolo.
 
 Desde el 31/10/2026, los cortes de captura incluyen comparación acumulativa con el corte anterior conforme al proceso de `ANALYSIS_REVIEW_STANDARD.md`; conservar originales y límites de comparabilidad. El alcance de una captura sigue siendo técnico, no una actualización general de macro/calendario.
+
+## ZIP técnico + revisión de mercado · regla vigente 03/11/2026
+
+Cada ZIP recibido para analizar inicia dos trabajos en la misma tarea: (1) análisis técnico del paquete y comparación con el corte previo; (2) revisión independiente de Fundamental, liquidez, mercados, sentimiento, derivados y Fechas conforme a las secciones3,4,6y7. Esta regla amplía la entrega: sustituye la instrucción anterior de limitar la solicitud ZIP solo al Técnico, sin mezclar sus razonamientos ni reescribir registros.
+
+Orden de publicación: análisis del ZIP arriba; contexto macro y síntesis de Cloe debajo, visible por defecto; indicadores y fechas con fuente y observación real. No exigir un clic para consultar el mercado. La consulta inferior puede cargarse por separado para no bloquear el Técnico.
+
+Revisar siempre DXY, stablecoins, M2USA, GlobalM2, WALCL, TGA, RRP y liquidez neta alineada; rendimientos2Y/10Y, sentimiento, capitalización y dominancias; revisar ETF, derivados/opciones y calendario oficial. No sustituir índices, monedas, fuentes o coberturas; AUM no es flujoETF y volumen de negociación no es liquidez monetaria. Registrar contradicciones de proveedores y excluir agregados incoherentes.
+
+Añadir solo observaciones nuevas o revisiones identificadas; conservar originales y el último valor verificado si no hay publicación. No duplicar el dato por cada ZIP. Describir qué se pudo renovar y qué sigue pendiente. El contexto obtenido después de una captura es un corte posterior, nunca información atribuida retrospectivamente al gráfico. La tarea termina con carga y SELECT por propietario; declarar cualquier límite de verificación visual.
+
+Esta es una instrucción de trabajo al procesar el ZIP en conversación; no afirma ingesta automática desde archivos ni un agente programado en segundo plano.
