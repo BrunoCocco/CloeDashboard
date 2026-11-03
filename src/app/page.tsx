@@ -37,6 +37,23 @@ export default async function Home({
     loadReviewArchive(userId, params),
   ]);
 
+  const selectedIndex = archive.items.findIndex(
+    (item) => item.id === archive.selected?.id,
+  );
+  const priorItem =
+    selectedIndex >= 0
+      ? archive.items
+          .slice(selectedIndex + 1)
+          .find((item) => item.asset === archive.selected?.asset)
+      : null;
+  const previous = priorItem
+    ? (
+        await loadReviewArchive(userId, {
+          asset: priorItem.asset,
+          cut: priorItem.id,
+        })
+      ).selected
+    : null;
   const dashboard = context.status === "available" ? context.dashboard : null;
   const contextParams = new URLSearchParams();
   for (const key of ["asset", "cut", "before"] as const)
@@ -45,11 +62,17 @@ export default async function Home({
   contextParams.set("context", "1");
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1920px] flex-col px-5 py-4 lg:px-8">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col px-5 py-4 lg:px-8">
         <header className="flex items-center justify-between gap-3 border-b border-border py-2">
-          <h1 className="text-base font-semibold text-white">
-            Cloe · Análisis
-          </h1>
+          <h1 className="text-base font-semibold text-white">Cloe ✦</h1>
+          <nav
+            className="flex gap-5 text-sm text-zinc-300"
+            aria-label="Navegación"
+          >
+            <Link href="/">Análisis</Link>
+            <a href="#review-history">Histórico</a>
+            <a href={`/?${contextParams}#market-context`}>Mercado</a>
+          </nav>
           <form action={signOut}>
             <button className="button-danger" type="submit">
               Salir
@@ -57,7 +80,7 @@ export default async function Home({
           </form>
         </header>
 
-        <AnalysisReviewArchive archive={archive} />
+        <AnalysisReviewArchive archive={archive} previous={previous} />
         {dashboard ? (
           <details
             open
