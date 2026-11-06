@@ -23,6 +23,12 @@ function load(file, imports = {}) {
   return c.exports;
 }
 const model = load("src/lib/analysis-reviews/model.ts");
+const { readableReviewText } = load("src/lib/analysis-reviews/presentation.ts");
+test("presentation preserves author names while separating compact legacy timeframes", () => {
+  const names = "Wyckoff, Weis, Hank Pruden y David H. Weis";
+  assert.equal(readableReviewText(names), names);
+  assert.equal(readableReviewText("Cierres4Hcerradas;volumen"), "Cierres 4H cerradas; volumen");
+});
 const example = load("src/data/btc-review-example.ts", {
   "@/lib/analysis-reviews/model": model,
 }).btcReviewExample;

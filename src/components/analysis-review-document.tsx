@@ -1,18 +1,12 @@
 "use client";
 import type { ReviewEntry } from "@/lib/analysis-reviews/model";
 import { reviewExport } from "@/lib/analysis-reviews/export";
+import { readableReviewText as readable } from "@/lib/analysis-reviews/presentation";
 import styles from "./analysis-reviews.module.css";
 const number = (value: number) =>
   value.toLocaleString("es-ES", {
     maximumFractionDigits: Math.abs(value) >= 1 ? 2 : 4,
   });
-// Presentation only: legacy snapshots retain their exact original wording.
-const readable = (value: string) =>
-  value
-    .replace(/([a-záéíóúñ])(?=\d)/gi, "$1 ")
-    .replace(/(\d)(?=[a-záéíóúñ])/g, "$1 ")
-    .replace(/([HDW])(?=[a-záéíóúñ])/g, "$1 ")
-    .replace(/([,;:])(?=[a-záéíóúñ])/gi, "$1 ");
 export function AnalysisReviewDocument({
   entry,
   previous = null,
